@@ -1,4 +1,4 @@
-# JSonGateway
+# pi-gateway
 A Techthulu JSon to GPIO, I2C and Serial gateway
 
 This repository contains the implementation of a gateway server design to run on the Debian based Raspberry Pi 3.
@@ -40,10 +40,10 @@ tar xzfo go.tgz
 export PATH=$PATH:/home/$USER/go/bin
 export GOROOT=/home/$USER/go
 
-cd JSonGateway
+cd pi-gateway
 GOPATH=`pwd`
 GOBIN=`pwd`/bin
-go install .
+go build -o bin/pi-gateway .
 </pre>
 
 Having done this the binaries will be found in the bin directory of your cloned repo.
@@ -54,7 +54,7 @@ Two proposals, python and Go, for an implementation language are afloat and awai
 
 The Golang proposal is to use a compiled language to allow the Pi processor to reduce Pi CPU and memory requirements.  This is raised due to a desire to handle audio, TCP/IP IO, as well as device IO.  In pactice audio demands are taking 1 of the Quad CPUs available.
 
-The JSonGateway project supports cross platform builds for the gateway allowing it to be developed on a non Pi host, including AWS or GCP,  and then binaries targetted at Pi or other ARM processors.  This is done using Docker.
+The pi-gateway project supports cross platform builds for the gateway allowing it to be developed on a non Pi host, including AWS or GCP,  and then binaries targetted at Pi or other ARM processors.  This is done using Docker.
 
 ## High Level APIs
 

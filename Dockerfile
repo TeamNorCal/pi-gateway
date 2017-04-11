@@ -1,6 +1,6 @@
 FROM debian:jessie
 
-# This docker file is only useful if you wish to build the JSonGateway on non ARM64 platforms 
+# This docker file is only useful if you wish to build the pi-gateway on non ARM64 platforms 
 # for example (x86_64), and OSes to generate cross platform binaries that can run on the Pi 3
 # using debian jessie.
 #
@@ -8,7 +8,7 @@ FROM debian:jessie
 # run 'go install .' inside the top level directory of the cloned github repo.
 # 
 # This Dockerfile fulfils one additional purpose and that is to provide an accurate record
-# from development of every dependency needed to compile and run the JSonGateway
+# from development of every dependency needed to compile and run the pi-gateway
 #
 # To build the docker image for the build something such as the following would be used. You only
 # need to do this once!. The use of the USER... variables allows the docker build to use your 
@@ -72,4 +72,4 @@ RUN cd /home/${USER} && \
 VOLUME /project
 WORKDIR /project
 
-CMD go build -o bin/JSonGateway.arm64 .
+CMD go get -d . && go build -o bin/pi-gateway.arm64 .
