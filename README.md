@@ -28,15 +28,33 @@ The ASCII output messages for driving the Audrino will be specified by the Audri
 ASCII ART HERE
 
 
-## Builds
+## Building
+
+Native builds on the Pi are the default , this is primarily how the code will be maintained and extended when onsite at Camp Navarro..  When using the Pi 3 builds can be performed by doing a git clone of the guthub repo then doing the following
+
+<pre>
+cd ~
+sudo apt-get install -y wget
+wget --quiet -O go.tgz https://storage.googleapis.com/golang/go1.8.1.linux-armv6l.tar.gz
+tar xzfo go.tgz
+export PATH=$PATH:/home/$USER/go/bin
+export GOROOT=/home/$USER/go
+
+cd JSonGateway
+GOPATH=`pwd`
+GOBIN=`pwd`/bin
+go install .
+</pre>
+
+Having done this the binaries will be found in the bin directory of your cloned repo.
+
+The instructions for performing cross platform builds are included inside the Dockerfile.
 
 Two proposals, python and Go, for an implementation language are afloat and await a decision.
 
 The Golang proposal is to use a compiled language to allow the Pi processor to reduce Pi CPU and memory requirements.  This is raised due to a desire to handle audio, TCP/IP IO, as well as device IO.  In pactice audio demands are taking 1 of the Quad CPUs available.
 
 The JSonGateway project supports cross platform builds for the gateway allowing it to be developed on a non Pi host, including AWS or GCP,  and then binaries targetted at Pi or other ARM processors.  This is done using Docker.
-
-Native builds on the Pi are also supported, this is primarily how the code will be maintained and extended when onsite at Camp Navarro.
 
 ## High Level APIs
 
@@ -57,3 +75,6 @@ Googles Low Level Library - https://periph.io/
 Support MIDI style music driven by glyphs appearing in the JSon stream, output to standard Pi Audio jack
 The USB ports on the pi will be used for line delimited ASCII text messages arriving from the Audrino.
 
+## Additional reference materials
+
+http://investigate.ingress.com/2017/03/16/glyph-music/

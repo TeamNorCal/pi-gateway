@@ -1,0 +1,3 @@
+autostash GOPATH=`pwd`
+autostash GOBIN=`pwd`/bin
+autostash PATH=`pwd`/bin:$PATH
