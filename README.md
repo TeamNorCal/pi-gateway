@@ -41,8 +41,8 @@ export PATH=$PATH:/home/$USER/go/bin
 export GOROOT=/home/$USER/go
 
 cd pi-gateway
-GOPATH=`pwd`
-GOBIN=`pwd`/bin
+export GOPATH=`pwd`
+export GOBIN=`pwd`/bin
 go build -o bin/pi-gateway .
 </pre>
 
@@ -67,7 +67,8 @@ Serial IO - https://reprage.com/post/using-golang-to-connect-raspberrypi-and-ard
 ## Fallback Libraries (Plan B)
 
 https://github.com/kidoman/embd
-Custom Hardware (if needed, not likely but an out if we need it) - https://gobot.io/documentation/platforms/raspi/
+Custom Hardware (if needed, not likely but an out if we need it)
+- https://gobot.io/documentation/platforms/raspi/
 Googles Low Level Library - https://periph.io/
 
 ## Stretch Goals
