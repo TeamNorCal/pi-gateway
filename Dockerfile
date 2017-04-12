@@ -34,8 +34,6 @@ ARG USER_GROUP_ID
 ENV USER_GROUP_ID ${USER_GROUP_ID}
 
 ENV INITSYSTEM on
-ENV GOOS linux
-ENV GOARCH arm64
 
 RUN apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y apt-utils && \
@@ -72,4 +70,8 @@ RUN cd /home/${USER} && \
 VOLUME /project
 WORKDIR /project
 
-CMD go get -d . && go build -o bin/pi-gateway.arm64 .
+ENV GOOS linux
+ENV GOARCH arm
+ENV GOARM 7
+
+CMD go get -d . && go build -o bin/pi-gateway.arm .
