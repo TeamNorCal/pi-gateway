@@ -4,15 +4,18 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/mgutz/logxi/v1"
 )
 
 var (
-	arduinos  = flag.String("arduinos", "", "A list of the preferred arduino devices to be used")
-	tecthulhu = flag.String("tecthulhu", "", "Either a serial device, or IP, and optionally port number of the tecthulhu REST server")
-	logLevel  = flag.String("loglevel", "debug", "Set the desired log level")
+	arduinos      = flag.String("arduinos", "", "A list of the preferred arduino devices to be used")
+	tecthulhus    = flag.String("tecthulhus", "http://127.0.0.1:12345", "A list of either a serial devices usb://dev/ttyAMA10, or http://IP:port numbers/ for the tecthulhu REST/JSon servers to watch")
+	homeTecthulhu = flag.String("home", "Camp Navarro", "The name of the portal which we wish to subscribe to and use to drive our arduinos")
+	logLevel      = flag.String("loglevel", "debug", "Set the desired log level")
 )
 
 // create Logger interface
@@ -22,7 +25,7 @@ func main() {
 
 	flag.Parse()
 
-	if len(*tecthulhu) == 0 {
+	if len(*tecthulhus) == 0 {
 		logW.Fatal("No tecthulhu TCP/IP or Serial USB modules were specified")
 		os.Exit(-1)
 	}
@@ -34,20 +37,67 @@ func main() {
 		logW.SetLevel(log.LevelInfo)
 	}
 
-	devices := findDevices()
+	devices := map[string]string{}
+	for _, device := range findDevices() {
+		// At the moment we only control a single portals audrinos however
+		// this can be changed very simply by using multiple names here
+		devices[*homeTecthulhu] = device
+	}
 
-	startDevices(devices)
+	// Start the device interfaces asynchronously while we also start the portal polling
+	// the ready channel will be closed when the devices are ready for use by other
+	// components
+	//
+	arduinos, err := startDevices(devices)
+	if err != nil {
+		logW.Fatal("No tecthulhu TCP/IP or Serial USB modules could be recognized")
+		os.Exit(-4)
+	}
 
-	tectC := make(chan interface{}, 1)
+	if len(arduinos) == 0 {
+		logW.Fatal("No arduinos could be recognized for use by TeamNorCal, ensure they are connected and loaded with firmware")
+	}
+
+	tectC := make(chan *portalStatus, 1)
 	errorC := make(chan error, 1)
-	err := startPortal(*tecthulhu, tectC, errorC)
+	quitC := make(chan bool, 1)
+	portals := strings.Split(*tecthulhus, ",")
 
+	go startPortals(portals, tectC, errorC, quitC)
+
+	// The gateway bridges the status reports from portals down to arduinos
+	// using the serial protocols defined by the arduino team
+	//
+	go startGateway(*homeTecthulhu, arduinos, tectC, quitC)
+
+	// If someone presses ctrl C then close our quitc channel to shutdown the system
+	// in an orderly way especially when dealing with device handles for the serial IO
+	//
+	sigC := make(chan os.Signal, 1)
+	signal.Notify(sigC, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	go func() {
+		select {
+		case <-quitC:
+		case <-sigC:
+			close(quitC)
+		}
+	}()
+
+	// Having started all of the IO interfaces concurrently simply loop
+	// waiting for any changes in state while the processing occurs
+	// in other threads
 	for {
 		select {
-		case err = <-errorC:
+		case err := <-errorC:
 			logW.Warn(err.Error())
-		case state := <-tectC:
-			logW.Info(fmt.Sprintf("%v", state))
+		case <-quitC:
+			for portalName, roles := range arduinos {
+				for _, dev := range roles {
+					logW.Warn(fmt.Sprintf("closing portal %s attached to device %s acting as a %s", portalName, dev.devName, dev.node))
+					dev.port.Close()
+				}
+			}
+			return
 		}
 	}
 }

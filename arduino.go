@@ -141,22 +141,47 @@ func findArduinos() (devices [][]string, err error) {
 	}
 }
 
-func startDevices(devices []string) {
-	for _, device := range devices {
+type arduino struct {
+	port    *serial.Port
+	portal  string // The name of ingress portal that this control device is associated with
+	devName string // The tty style device name
+	node    string // The type of arduino that is present, core, or resonator cluster
+}
+
+// startDevices creates a map of the live arduinos that are open for
+// use by the gateway.  The map is first indexed by the name of the device,
+// and then indexed by the TeamNorCal role for the device
+//
+func startDevices(devices map[string]string) (ports map[string]map[string]*arduino, err error) {
+
+	ports = map[string]map[string]*arduino{}
+
+	for portalName, device := range devices {
 		dev, err := NewAudrino(device)
 		if err != nil {
 			logW.Error(fmt.Sprintf("unable to open arduino at %s due to %s", device, err.Error()), "error", err)
 			continue
 		}
-		defer dev.port.Close()
-
 		line, err := dev.ping()
 		if err != nil {
 			logW.Error(fmt.Sprintf("unable to ping arduino at %s due to %s", device, err.Error()), "error", err)
 			continue
 		}
+
+		dev.node = line
+		dev.devName = device
+		dev.portal = portalName
 		logW.Info(fmt.Sprintf("arduino at %s responded with %s", device, line))
+
+		if _, ok := ports[portalName]; !ok {
+			ports[portalName] = map[string]*arduino{}
+		}
+		ports[portalName][line] = dev
 	}
+	if len(ports) == 0 {
+		return nil, fmt.Errorf("no audrinos were recognized as being TeamNorCal devices")
+	}
+	return ports, nil
 }
 
 func findDevices() (devices []string) {
@@ -182,10 +207,6 @@ func findDevices() (devices []string) {
 		}
 	}
 	return devices
-}
-
-type arduino struct {
-	port *serial.Port
 }
 
 // NewAudrino is used to open a connection to an Audrino using
@@ -224,4 +245,17 @@ func (dev *arduino) ping() (line string, err error) {
 	buf, err = reader.ReadBytes('\x0a')
 
 	return strings.TrimSpace(string(buf)), nil
+}
+
+func (dev *arduino) sendCmd(cmd []byte) (response []byte, err error) {
+
+	// TODO Add an incremental write loop for serial devices
+	_, err = dev.port.Write(cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	reader := bufio.NewReader(dev.port)
+
+	return reader.ReadBytes('\x0a')
 }
