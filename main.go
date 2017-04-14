@@ -10,30 +10,33 @@ import (
 )
 
 var (
-	audrinos  = flag.String("audrinos", "", "A list of the preferred audrino devices to be used")
+	arduinos  = flag.String("arduinos", "", "A list of the preferred arduino devices to be used")
 	tecthulhu = flag.String("tecthulhu", "", "Either a serial device, or IP, and optionally port number of the tecthulhu REST server")
+	logLevel  = flag.String("loglevel", "debug", "Set the desired log level")
 )
+
+// create Logger interface
+var logW = log.NewLogger(log.NewConcurrentWriter(os.Stdout), "pi-gateway")
 
 func main() {
 
 	flag.Parse()
 
 	if len(*tecthulhu) == 0 {
-		log.Fatal("No tecthulhu TCP/IP or Serial USB modules were specified")
+		logW.Fatal("No tecthulhu TCP/IP or Serial USB modules were specified")
 		os.Exit(-1)
 	}
 
-	// Parse the comma seperated device list
-	audrinos := strings.Split(*audrinos, ",")
-
-	// If the user did not specify audrinos to be used add then automatically
-	if len(audrinos) == 0 {
-		audrinos = findArduinos()
-		if len(audrinos) == 0 {
-			log.Fatal("No audrinos were specified and could not be found")
-			os.Exit(-2)
-		}
+	switch strings.ToLower(*logLevel) {
+	case "debug":
+		logW.SetLevel(log.LevelDebug)
+	case "info":
+		logW.SetLevel(log.LevelInfo)
 	}
+
+	devices := findDevices()
+
+	startDevices(devices)
 
 	tectC := make(chan interface{}, 1)
 	errorC := make(chan error, 1)
@@ -42,9 +45,9 @@ func main() {
 	for {
 		select {
 		case err = <-errorC:
-			log.Warn(err.Error())
+			logW.Warn(err.Error())
 		case state := <-tectC:
-			log.Info(fmt.Sprintf("%v", state))
+			logW.Info(fmt.Sprintf("%v", state))
 		}
 	}
 }

@@ -1,0 +1,227 @@
+package main
+
+// This file contains the implementation of an arduino interface
+
+import (
+	"bufio"
+	"bytes"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"strings"
+	"time"
+
+	"github.com/tarm/serial"
+)
+
+var cmd = `#!/bin/bash
+for sysdevpath in $(find /sys/bus/usb/devices/usb*/ -name dev); do 
+(
+syspath="${sysdevpath%/dev}"
+devname="$(udevadm info -q name -p $syspath)"
+[[ "$devname" == "bus/"* ]] && continue
+eval "$(udevadm info -q property --export -p $syspath)"
+[[ -z "$ID_SERIAL" ]] && continue
+echo "/dev/$devname - $ID_SERIAL"
+)
+done `
+
+func sendError(timeout time.Duration, err error, errorC chan<- error) {
+	select {
+	case <-time.After(timeout):
+	case errorC <- err:
+	}
+}
+
+func run(timeout time.Duration, outputC chan string, errorC chan error, command string, args ...string) {
+
+	defer func() {
+		errorC <- nil
+	}()
+
+	// instantiate new command
+	cmd := exec.Command(command, args...)
+
+	// get pipe to standard output
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		sendError(timeout, err, errorC)
+		return
+	}
+
+	// start process via command
+	if err := cmd.Start(); err != nil {
+		sendError(timeout, err, errorC)
+		return
+	}
+
+	// setup a buffer to capture standard output
+	var buf bytes.Buffer
+
+	// create a channel to capture any errors from wait
+	done := make(chan error)
+	go func() {
+		if _, err := buf.ReadFrom(stdout); err != nil {
+			sendError(timeout, err, errorC)
+		}
+		done <- cmd.Wait()
+	}()
+
+	// block on select, and switch based on actions received
+	select {
+	case <-time.After(timeout):
+		if err := cmd.Process.Kill(); err != nil {
+			sendError(timeout, err, errorC)
+			return
+		}
+		sendError(timeout, fmt.Errorf("process timed out"), errorC)
+		return
+	case err := <-done:
+		if err != nil {
+			sendError(timeout, err, errorC)
+			close(done)
+
+		}
+		outputC <- buf.String()
+	}
+}
+
+// findArduinos locates devices that implement the Arduino
+// serial connection.
+//
+// This function returns a collection of the devices
+// that are likely candidates for Arduino.
+//
+func findArduinos() (devices [][]string, err error) {
+
+	// Create a script to do some device discovery
+	tmpfile, err := ioutil.TempFile("", "example")
+	if err != nil {
+		return nil, err
+	}
+
+	defer os.Remove(tmpfile.Name()) // clean up
+
+	if _, err = tmpfile.Write([]byte(cmd)); err != nil {
+		return nil, err
+	}
+	os.Chmod(tmpfile.Name(), 0700)
+	if err = tmpfile.Close(); err != nil {
+		return nil, err
+	}
+
+	devices = [][]string{}
+
+	outputC := make(chan string, 1)
+	defer close(outputC)
+
+	errorC := make(chan error, 1)
+	defer close(errorC)
+
+	go run(time.Duration(5*time.Second), outputC, errorC, tmpfile.Name())
+
+	for {
+		select {
+		case dev := <-outputC:
+			for _, line := range strings.Split(dev, "\n") {
+				if strings.Contains(line, "arduino") {
+					details := strings.Split(line, " -")
+					serial := strings.Split(line, "_")
+					devices = append(devices, []string{details[0], strings.TrimSpace(serial[len(serial)-1])})
+				}
+			}
+		case err = <-errorC:
+			if err == nil {
+				return devices, nil
+			}
+			return nil, err
+		}
+
+	}
+}
+
+func startDevices(devices []string) {
+	for _, device := range devices {
+		dev, err := NewAudrino(device)
+		if err != nil {
+			logW.Error(fmt.Sprintf("unable to open arduino at %s due to %s", device, err.Error()), "error", err)
+			continue
+		}
+		defer dev.port.Close()
+
+		line, err := dev.ping()
+		if err != nil {
+			logW.Error(fmt.Sprintf("unable to ping arduino at %s due to %s", device, err.Error()), "error", err)
+			continue
+		}
+		logW.Info(fmt.Sprintf("arduino at %s responded with %s", device, line))
+	}
+}
+
+func findDevices() (devices []string) {
+	// Parse the comma seperated device list
+	devices = strings.Split(*arduinos, ",")
+
+	// If the user did not specify arduinos to be used add then automatically
+	if len(devices) == 1 && len(devices[0]) == 0 {
+		deviceCatalog, err := findArduinos()
+		if err != nil {
+			logW.Error(err.Error())
+			os.Exit(-3)
+		}
+		if len(deviceCatalog) == 0 {
+			logW.Fatal("No arduinos were specified and could not be found")
+			os.Exit(-2)
+		}
+
+		devices = make([]string, 0, len(deviceCatalog))
+		for _, attribs := range deviceCatalog {
+			logW.Info(fmt.Sprintf("Found arduino '%s' serial # '%s'", attribs[0], attribs[1]), "arduinoDevice", attribs[0], "audrinoSerial", attribs[1])
+			devices = append(devices, attribs[0])
+		}
+	}
+	return devices
+}
+
+type arduino struct {
+	port *serial.Port
+}
+
+// NewAudrino is used to open a connection to an Audrino using
+// the serial device passed into the function
+//
+func NewAudrino(path string) (device *arduino, err error) {
+
+	device = &arduino{}
+
+	device.port, err = serial.OpenPort(&serial.Config{Name: path, Baud: 9600, ReadTimeout: time.Duration(time.Second * 5)})
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Let the device stabilize before continuing
+	select {
+	case <-time.After(2 * time.Second):
+	}
+
+	return device, nil
+}
+
+func (dev *arduino) ping() (line string, err error) {
+
+	n, err := dev.port.Write([]byte("*\n"))
+	if err != nil {
+		return line, err
+	}
+	if n != 2 {
+		logW.Warn(fmt.Sprintf("%d bytes written", n))
+	}
+
+	buf := make([]byte, 256)
+	reader := bufio.NewReader(dev.port)
+	buf, err = reader.ReadBytes('\x0a')
+
+	return strings.TrimSpace(string(buf)), nil
+}
