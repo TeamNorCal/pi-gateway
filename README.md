@@ -56,6 +56,26 @@ The Golang proposal is to use a compiled language to allow the Pi processor to r
 
 The pi-gateway project supports cross platform builds for the gateway allowing it to be developed on a non Pi host, including AWS or GCP,  and then binaries targetted at Pi or other ARM processors.  This is done using Docker.
 
+## Simulator
+
+A simulator is also provided for the tecthulhu in the form of JSON files that can be served using the gost binary directly out of the github directory pi-gateway/simulator.
+
+<pre>
+cd pi-gateway
+export GOPATH=`pwd`
+export GOBIN=`pwd`/bin
+go get github.com/golang-id/gost
+bin/gost -listen=127.0.0.1:12345 -path="./simulator"
+</pre>
+
+Manually retriving information from the simulator is as simple as:
+
+<pre>
+wget -O- --quiet 127.0.0.1:12345/module/status/json
+</pre>
+
+This simulator can be run without complex infrastructure and with a single binary.
+
 ## High Level APIs
 
 Various APIs for use with the Pi to support the CPU requirements for a Quad core CPU that can concurrently use the music and audio APIs along with being able to respond to JSon and GPIO requests will be trialed prior to the event.
