@@ -58,14 +58,14 @@ The pi-gateway project supports cross platform builds for the gateway allowing i
 
 ## Simulator
 
-A simulator is also provided for the tecthulhu in the form of JSON files that can be served using the gost binary directly out of the github directory pi-gateway/simulator.
+A simulator is also provided for the tecthulhu in the form of JSON files that can be served using the HttpRoller binary.
 
 <pre>
 cd pi-gateway
 export GOPATH=`pwd`
 export GOBIN=`pwd`/bin
-go get github.com/golang-id/gost
-bin/gost -listen=127.0.0.1:12345 -path="./simulator"
+go get github.com/karlmutch/HttpRoller
+bin/HttpRoller -listen=127.0.0.1:12345 -path="./simulator/scenarios/default" -window 15s
 </pre>
 
 Manually retriving information from the simulator is as simple as:

@@ -37,11 +37,11 @@ func main() {
 		logW.SetLevel(log.LevelInfo)
 	}
 
-	devices := map[string]string{}
+	devices := map[string][]string{}
 	for _, device := range findDevices() {
 		// At the moment we only control a single portals audrinos however
 		// this can be changed very simply by using multiple names here
-		devices[*homeTecthulhu] = device
+		devices[*homeTecthulhu] = append(devices[*homeTecthulhu], device)
 	}
 
 	// Start the device interfaces asynchronously while we also start the portal polling
@@ -93,7 +93,7 @@ func main() {
 		case <-quitC:
 			for portalName, roles := range arduinos {
 				for _, dev := range roles {
-					logW.Warn(fmt.Sprintf("closing portal %s attached to device %s acting as a %s", portalName, dev.devName, dev.node))
+					logW.Warn(fmt.Sprintf("closing portal %s attached to device %s acting as a %s", portalName, dev.devName, dev.role))
 					dev.port.Close()
 				}
 			}

@@ -34,10 +34,11 @@ func startGateway(homePortal string, arduinos map[string]map[string]*arduino, te
 				lastState[state.Status.Title] = state
 			}
 
+			factionChange := lastState[state.Status.Title].Status.ControllingFaction != state.Status.ControllingFaction
+
 			// Detect any portal changes
 			//
 			/**
-						factionChange := lastState[state.Status.Title].Status.ControllingFaction != state.Status.ControllingFaction
 						healthChange := lastState[state.Status.Title].Status.Health - state.Status.Health
 						levelChange := lastState[state.Status.Title].Status.Level - state.Status.Level
 
@@ -52,24 +53,32 @@ func startGateway(homePortal string, arduinos map[string]map[string]*arduino, te
 			// the arduinos that are listening and our associated with the home portal
 			// in any functional capacity
 			if homePortal == state.Status.Title {
-				for node, device := range arduinos[homePortal] {
+				for _, device := range arduinos[homePortal] {
 					cmd := []byte{}
 					switch state.Status.ControllingFaction {
 					case "1":
-						cmd = append(cmd, 'e')
+						if factionChange {
+							cmd = append(cmd, 'E')
+						} else {
+							cmd = append(cmd, 'e')
+						}
 					case "2":
-						cmd = append(cmd, 'r')
+						if factionChange {
+							cmd = append(cmd, 'R')
+						} else {
+							cmd = append(cmd, 'r')
+						}
 					}
 					cmd = append(cmd, []byte(strconv.FormatInt(int64(state.Status.Health), 10))...)
 					cmd = append(cmd, '\n')
 
 					response, err := device.sendCmd(cmd)
 					if err != nil {
-						logW.Warn(fmt.Sprintf("cmd %q sent to %s device %s got an error %s", cmd, node, device.devName, err.Error()))
+						logW.Warn(fmt.Sprintf("cmd %q sent to device %s role '%s' got an error %s", cmd, device.devName, device.role, err.Error()))
 						continue
 					}
 
-					logW.Info(fmt.Sprintf("sent cmd %q to %s device %s and got response %s", cmd, node, device.devName, response))
+					logW.Info(fmt.Sprintf("sent cmd %q to device %s role '%s' and got response %s", cmd, device.devName, device.role, response))
 				}
 			}
 

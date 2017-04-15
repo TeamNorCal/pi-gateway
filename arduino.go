@@ -23,7 +23,7 @@ devname="$(udevadm info -q name -p $syspath)"
 [[ "$devname" == "bus/"* ]] && continue
 eval "$(udevadm info -q property --export -p $syspath)"
 [[ -z "$ID_SERIAL" ]] && continue
-echo "/dev/$devname - $ID_SERIAL"
+echo -e "/dev/$devname - $ID_SERIAL\n"
 )
 done `
 
@@ -145,38 +145,40 @@ type arduino struct {
 	port    *serial.Port
 	portal  string // The name of ingress portal that this control device is associated with
 	devName string // The tty style device name
-	node    string // The type of arduino that is present, core, or resonator cluster
+	role    string // The type of arduino that is present, core, or resonator cluster
 }
 
 // startDevices creates a map of the live arduinos that are open for
 // use by the gateway.  The map is first indexed by the name of the device,
 // and then indexed by the TeamNorCal role for the device
 //
-func startDevices(devices map[string]string) (ports map[string]map[string]*arduino, err error) {
+func startDevices(devices map[string][]string) (ports map[string]map[string]*arduino, err error) {
 
 	ports = map[string]map[string]*arduino{}
 
-	for portalName, device := range devices {
-		dev, err := NewAudrino(device)
-		if err != nil {
-			logW.Error(fmt.Sprintf("unable to open arduino at %s due to %s", device, err.Error()), "error", err)
-			continue
-		}
-		line, err := dev.ping()
-		if err != nil {
-			logW.Error(fmt.Sprintf("unable to ping arduino at %s due to %s", device, err.Error()), "error", err)
-			continue
-		}
+	for portalName, devices := range devices {
+		for _, device := range devices {
+			dev, err := NewAudrino(device)
+			if err != nil {
+				logW.Error(fmt.Sprintf("unable to open arduino at %s due to %s", device, err.Error()), "error", err)
+				continue
+			}
+			line, err := dev.ping()
+			if err != nil {
+				logW.Error(fmt.Sprintf("unable to ping arduino at %s due to %s", device, err.Error()), "error", err)
+				continue
+			}
 
-		dev.node = line
-		dev.devName = device
-		dev.portal = portalName
-		logW.Info(fmt.Sprintf("arduino at %s responded with %s", device, line))
+			dev.role = line
+			dev.devName = device
+			dev.portal = portalName
+			logW.Info(fmt.Sprintf("arduino at %s has the role of '%s'", device, line))
 
-		if _, ok := ports[portalName]; !ok {
-			ports[portalName] = map[string]*arduino{}
+			if _, ok := ports[portalName]; !ok {
+				ports[portalName] = map[string]*arduino{}
+			}
+			ports[portalName][line] = dev
 		}
-		ports[portalName][line] = dev
 	}
 	if len(ports) == 0 {
 		return nil, fmt.Errorf("no audrinos were recognized as being TeamNorCal devices")
@@ -237,7 +239,7 @@ func (dev *arduino) ping() (line string, err error) {
 		return line, err
 	}
 	if n != 2 {
-		logW.Warn(fmt.Sprintf("%d bytes written", n))
+		logW.Warn(fmt.Sprintf("%d bytes written out of %d", n, 2))
 	}
 
 	buf := make([]byte, 256)
@@ -250,9 +252,12 @@ func (dev *arduino) ping() (line string, err error) {
 func (dev *arduino) sendCmd(cmd []byte) (response []byte, err error) {
 
 	// TODO Add an incremental write loop for serial devices
-	_, err = dev.port.Write(cmd)
+	n, err := dev.port.Write(cmd)
 	if err != nil {
 		return nil, err
+	}
+	if n != len(cmd) {
+		logW.Warn(fmt.Sprintf("%d bytes written out of %d", n, len(cmd)))
 	}
 
 	reader := bufio.NewReader(dev.port)
