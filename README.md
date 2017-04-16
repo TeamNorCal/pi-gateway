@@ -80,7 +80,7 @@ export GOROOT=/home/$USER/go
 cd pi-gateway
 export GOPATH=`pwd`
 export GOBIN=`pwd`/bin
-go build -o bin/pi-gateway .
+go get -d . && go build -o bin/pi-gateway .
 </pre>
 
 Having done this the binaries will be found in the bin directory of your cloned repo.

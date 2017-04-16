@@ -102,7 +102,7 @@ func getStatus(device string, statusC chan *portalStatus, errorC chan error) {
 //
 func startPortals(portals []string, statusC chan *portalStatus, errorC chan error, quitC chan bool) (err error) {
 
-	poll := time.NewTicker(10 * time.Second)
+	poll := time.NewTicker(time.Second)
 	defer poll.Stop()
 
 	for {

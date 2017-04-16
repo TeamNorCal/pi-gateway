@@ -15,7 +15,7 @@ var (
 	arduinos      = flag.String("arduinos", "", "A list of the preferred arduino devices to be used")
 	tecthulhus    = flag.String("tecthulhus", "http://127.0.0.1:12345", "A list of either a serial devices usb://dev/ttyAMA10, or http://IP:port numbers/ for the tecthulhu REST/JSon servers to watch")
 	homeTecthulhu = flag.String("home", "Camp Navarro", "The name of the portal which we wish to subscribe to and use to drive our arduinos")
-	logLevel      = flag.String("loglevel", "debug", "Set the desired log level")
+	logLevel      = flag.String("loglevel", "warning", "Set the desired log level")
 )
 
 // create Logger interface
@@ -30,12 +30,8 @@ func main() {
 		os.Exit(-1)
 	}
 
-	switch strings.ToLower(*logLevel) {
-	case "debug":
-		logW.SetLevel(log.LevelDebug)
-	case "info":
-		logW.SetLevel(log.LevelInfo)
-	}
+	// Wait until intialization is over before applying the log level
+	logW.SetLevel(log.LevelInfo)
 
 	devices := map[string][]string{}
 	for _, device := range findDevices() {
@@ -56,6 +52,19 @@ func main() {
 
 	if len(arduinos) == 0 {
 		logW.Fatal("No arduinos could be recognized for use by TeamNorCal, ensure they are connected and loaded with firmware")
+	}
+
+	switch strings.ToLower(*logLevel) {
+	case "debug":
+		logW.SetLevel(log.LevelDebug)
+	case "info":
+		logW.SetLevel(log.LevelInfo)
+	case "warning", "warn":
+		logW.SetLevel(log.LevelWarn)
+	case "error", "err":
+		logW.SetLevel(log.LevelError)
+	case "fatal":
+		logW.SetLevel(log.LevelFatal)
 	}
 
 	tectC := make(chan *portalStatus, 1)

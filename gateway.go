@@ -104,12 +104,11 @@ func startGateway(homePortal string, arduinos map[string]map[string]*arduino, te
 				cmd = append(cmd, '\n')
 
 				for _, device := range arduinos[homePortal] {
-					response, err := device.sendCmd(cmd)
-					if err != nil {
-						logW.Warn(fmt.Sprintf("cmd %q sent to device %s role '%s' got an error %s", cmd, device.devName, device.role, err.Error()))
+					if err := device.sendCmd(cmd); err != nil {
+						logW.Warn(fmt.Sprintf("%q ➡  device %s role '%s' got an error %s", cmd, device.devName, device.role, err.Error()))
 						continue
 					}
-					logW.Info(fmt.Sprintf("sent cmd %q to device %s role '%s' and got response %s", cmd, device.devName, device.role, response))
+					logW.Info(fmt.Sprintf("%q ➡ %40.40s\t%s", cmd, device.role, device.devName))
 				}
 			}
 

@@ -218,7 +218,7 @@ func NewAudrino(path string) (device *arduino, err error) {
 
 	device = &arduino{}
 
-	device.port, err = serial.OpenPort(&serial.Config{Name: path, Baud: 9600, ReadTimeout: time.Duration(time.Second * 5)})
+	device.port, err = serial.OpenPort(&serial.Config{Name: path, Baud: 115200, ReadTimeout: time.Duration(time.Second * 5)})
 
 	if err != nil {
 		return nil, err
@@ -233,6 +233,8 @@ func NewAudrino(path string) (device *arduino, err error) {
 }
 
 func (dev *arduino) ping() (line string, err error) {
+
+	dev.port.Flush()
 
 	n, err := dev.port.Write([]byte("*\n"))
 	if err != nil {
@@ -249,18 +251,16 @@ func (dev *arduino) ping() (line string, err error) {
 	return strings.TrimSpace(string(buf)), nil
 }
 
-func (dev *arduino) sendCmd(cmd []byte) (response []byte, err error) {
+func (dev *arduino) sendCmd(cmd []byte) (err error) {
 
 	// TODO Add an incremental write loop for serial devices
 	n, err := dev.port.Write(cmd)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if n != len(cmd) {
 		logW.Warn(fmt.Sprintf("%d bytes written out of %d", n, len(cmd)))
 	}
 
-	reader := bufio.NewReader(dev.port)
-
-	return reader.ReadBytes('\x0a')
+	return nil
 }
