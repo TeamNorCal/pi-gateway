@@ -169,3 +169,15 @@ The USB ports on the pi will be used for line delimited ASCII text messages arri
 ## Additional reference materials
 
 http://investigate.ingress.com/2017/03/16/glyph-music/
+PulseAudio notes and bluetooth notes at http://blog.mrverrall.co.uk/2013/01/raspberry-pi-a2dp-bluetooth-audio.html
+
+https://gist.github.com/oleq/24e09112b07464acbda1
+sudo apt-get install libpulse-dev
+https://github.com/mesilliac/pulse-simple/
+https://github.com/moriyoshi/pulsego
+
+
+Simple but does lots of graphics
+sudo apt-get install libsfml-dev
+https://bitbucket.org/krepa098/gosfml2/wiki/Home
+
