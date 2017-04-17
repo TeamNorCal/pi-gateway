@@ -4,7 +4,7 @@ A Techthulu JSon to GPIO, I2C and Serial gateway
 This repository contains the implementation of a gateway server design to run on the Debian based Raspberry Pi 3.
 
 The requirements for this software are current driven by several data sources from the Magnus 
-Reawakens project hosted by Niatic.
+Reawakens project hosted by Niantic.
 
 ## Requirements
 
