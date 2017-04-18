@@ -79,7 +79,7 @@ func startGateway(homePortal string, arduinos map[string]map[string]*arduino, te
 				resCmd := []byte{'0', '0', '0', '0', '0', '0', '0', '0'}
 				resHealth := []string{"0", "0", "0", "0", "0", "0", "0", "0"}
 				// Translate an ascii compass point to a position in the resonators array
-				resPositionMap := map[string]int{"N": 0, "NE": 1, "E": 2, "SE": 3, "S": 4, "SW": 5, "W": 6, "NW": 7}
+				resPositionMap := map[string]int{"N": 2, "NE": 1, "E": 0, "SE": 7, "S": 6, "SW": 5, "W": 4, "NW": 3}
 
 				for _, res := range state.Status.Resonators {
 					if position, ok := resPositionMap[res.Position]; ok {
@@ -98,6 +98,21 @@ func startGateway(homePortal string, arduinos map[string]map[string]*arduino, te
 					cmd = append(cmd, ':')
 					cmd = append(cmd, []byte(health)...)
 				}
+
+				cmd = append(cmd, ':')
+				// Mods array handling
+				mods := []byte{' ', ' ', ' ', ' '}
+				modsMap := map[string]byte{"FA": '0', "HS-C": '1',
+					"HS-R": '2', "HS-VR": '3', "LA-R ": '4', "LA-VR": '5',
+					"SBUL": '6', "MH-C": '7', "MH-R": '8', "MH-VR": '9',
+					"PS-C": 'A', "PS-R": 'B', "PS-VR": 'C', "AXA": 'D',
+					"T": 'E'}
+				for i, mod := range state.Status.Mods {
+					if code, ok := modsMap[mod]; ok {
+						mods[i] = code
+					}
+				}
+				cmd = append(cmd, mods...)
 				cmd = append(cmd, ':')
 
 				// After printing the overall health output the per resonator health wih delimiters

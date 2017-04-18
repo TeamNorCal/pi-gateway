@@ -27,6 +27,7 @@ type status struct {
 	Level              int         `json:"level"`
 	Health             int         `json:"health"`
 	ControllingFaction string      `json:"controllingFaction"`
+	Mods               []string    `json:"mods"`
 	Resonators         []resonator `json:"resonators"`
 }
 

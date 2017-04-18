@@ -46,14 +46,15 @@ All messages between the arduinos and the pi-gateway are line delimited.
 
 The basic format of the message is as follows :
 
-Fnnnnnnnn:..d:..r:..r:..r:..r:..r:..r:..r:..r:\n
+Fnnnnnnnn:..d:..r:..r:..r:..r:..r:..r:..r:..r:mmmm:\n
 
 F represents the current faction that holds the portal.  When in uppercase this represents
 a change in the owning faction.  'r', or 'R' for resistance, 'n', or 'N' for neutral,
 'e', or 'E' for enlightened.
 
 The nnnnnnnn component of our message is an ASCII string of the resonator levels on the
-portal arranged started with North and going clockwise.
+portal arranged started with the eastern point and going counter-clockwise.  Due east 
+being in position 0, NW at position 1, north at position 2 and so on.
 
 A delimiter then appears ':' and this is followed by an ASCII formatted number of the
 precentage health of the portal.
@@ -61,7 +62,28 @@ precentage health of the portal.
 Then another delimiter, ':', and a set of delimited ASCII formatted numbers each one
 representing the health of the resonators starting with N and then going clockwise.
 
-Finally a '\n' character terminates the message.
+The next set of four ASCII characters contain information about the mods that
+are present on the portal.
+
+  - No mod present in this slot
+0 - FA Force Amp
+1 - HS-C Heat Shield, Common
+2 - HS-R Heat Shield, Rare
+3 - HS-VR Heat Shield, Very Rare
+4 - LA-R Link Amplifier, Rare
+5 - LA-VR Link Amplifier, Very Rare
+6 - SBUL SoftBank Ultra Link
+7 - MH-C MultiHack, Common
+8 - MH-R MultiHack, Rare
+9 - MH-VR MultiHack, Very Rare
+A - PS-C Portal Shield, Common
+B - PS-R Portal Shield, Rare
+C - PS-VR Portal Sheild, Very Rare
+D - AXA AXS Shield
+E - T Turret
+
+
+Finally a delimiter ':' and '\n' character terminates the message.
 
 ## Building
 
