@@ -32,7 +32,7 @@ The ASCII output messages for driving the Audrino will be specified by the Audri
 
 ## Interface schematic
 
-
+![wiring diagram](https://github.com/TeamNorCal/portal/blob/master/TeamNorCal_bb.png)
 ASCII ART HERE
 
 ## ASCII Protocol
