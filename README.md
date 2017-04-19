@@ -38,7 +38,7 @@ ASCII ART HERE
 ## ASCII Protocol
 
 The ASCII protocol is used between the pi-gateway and audrinos that successfully respond to
-the '*' commands with a Magnus response.  On the console of the pi-gateway when these
+the '\*' commands with a Magnus response.  On the console of the pi-gateway when these
 devices are detected you will you see a message such as 
 "arduino at /dev/ttyACM0 has the role of 'Magnus Resonators Node'".
 
@@ -65,22 +65,22 @@ representing the health of the resonators starting with N and then going clockwi
 The next set of four ASCII characters contain information about the mods that
 are present on the portal.
 
-  - No mod present in this slot
-0 - FA Force Amp
-1 - HS-C Heat Shield, Common
-2 - HS-R Heat Shield, Rare
-3 - HS-VR Heat Shield, Very Rare
-4 - LA-R Link Amplifier, Rare
-5 - LA-VR Link Amplifier, Very Rare
-6 - SBUL SoftBank Ultra Link
-7 - MH-C MultiHack, Common
-8 - MH-R MultiHack, Rare
-9 - MH-VR MultiHack, Very Rare
-A - PS-C Portal Shield, Common
-B - PS-R Portal Shield, Rare
-C - PS-VR Portal Sheild, Very Rare
-D - AXA AXS Shield
-E - T Turret
+* ' ' - No mod present in this slot
+* '0' - FA Force Amp
+* '1' - HS-C Heat Shield, Common
+* '2' - HS-R Heat Shield, Rare
+* '3' - HS-VR Heat Shield, Very Rare
+* '4' - LA-R Link Amplifier, Rare
+* '5' - LA-VR Link Amplifier, Very Rare
+* '6' - SBUL SoftBank Ultra Link
+* '7' - MH-C MultiHack, Common
+* '8' - MH-R MultiHack, Rare
+* '9' - MH-VR MultiHack, Very Rare
+* 'A' - PS-C Portal Shield, Common
+* 'B' - PS-R Portal Shield, Rare
+* 'C' - PS-VR Portal Sheild, Very Rare
+* 'D' - AXA AXS Shield
+* 'E' - T Turret
 
 
 Finally a delimiter ':' and '\n' character terminates the message.
@@ -156,6 +156,11 @@ A more complex test case drains all resonators over a 130 second period and can 
 test data generator as follows:
 
 bin/HttpRoller -listen=127.0.0.1:12345 -path="./simulator/scenarios/XM_drain_all" -window 130s
+
+A programatic means of generating test JSON files dose exist to simplify complex ingress portal
+state changes.  The github.com/karlmutch/techthulu-generator tool is intended as an adhoc 
+tool written in Go that can be modified to create large numbers of json files for test 
+cases across time.
 
 More tests are being written.
 
