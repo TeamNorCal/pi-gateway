@@ -143,7 +143,7 @@ cd pi-gateway
 export GOPATH=`pwd`
 export GOBIN=`pwd`/bin
 go get github.com/karlmutch/HttpRoller
-bin/HttpRoller -listen=127.0.0.1:12345 -path="./simulator/scenarios/default" -window 15s
+bin/HttpRoller -listen=127.0.0.1:12345 -path="./simulator/scenarios/stable" -window 15s
 </pre>
 
 Manually retriving information from the simulator is as simple as:
@@ -152,7 +152,12 @@ Manually retriving information from the simulator is as simple as:
 wget -O- --quiet 127.0.0.1:12345/module/status/json
 </pre>
 
-This simulator can be run without complex infrastructure and runs with a single binary.
+A more complex test case drains all resonators over a 130 second period and can be run with the 
+test data generator as follows:
+
+bin/HttpRoller -listen=127.0.0.1:12345 -path="./simulator/scenarios/XM_drain_all" -window 130s
+
+More tests are being written.
 
 ### Public server testing
 
