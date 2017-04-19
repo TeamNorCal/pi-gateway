@@ -36,6 +36,11 @@
             "level": 3,
             "health": 90,
             "owner": "Matti91Tilde"
+        }, {
+            "position": "SE",
+            "level": 3,
+            "health": 90,
+            "owner": "Matti91Tilde"
         }],
         "level": 4,
         "health": 90,

@@ -129,6 +129,13 @@ func findArduinos() (devices [][]string, err error) {
 					details := strings.Split(line, " -")
 					serial := strings.Split(line, "_")
 					devices = append(devices, []string{details[0], strings.TrimSpace(serial[len(serial)-1])})
+					continue
+				}
+				if strings.Contains(line, "ttyUSB") {
+					details := strings.Split(line, " -")
+					serial := strings.Split(line, " -/")[1]
+					devices = append(devices, []string{details[0], strings.TrimSpace(serial)})
+					continue
 				}
 			}
 		case err = <-errorC:
