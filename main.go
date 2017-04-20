@@ -33,27 +33,6 @@ func main() {
 	// Wait until intialization is over before applying the log level
 	logW.SetLevel(log.LevelInfo)
 
-	devices := map[string][]string{}
-	for _, device := range findDevices() {
-		// At the moment we only control a single portals audrinos however
-		// this can be changed very simply by using multiple names here
-		devices[*homeTecthulhu] = append(devices[*homeTecthulhu], device)
-	}
-
-	// Start the device interfaces asynchronously while we also start the portal polling
-	// the ready channel will be closed when the devices are ready for use by other
-	// components
-	//
-	arduinos, err := startDevices(devices)
-	if err != nil {
-		logW.Fatal("No tecthulhu TCP/IP or Serial USB modules could be recognized")
-		os.Exit(-4)
-	}
-
-	if len(arduinos) == 0 {
-		logW.Fatal("No arduinos could be recognized for use by TeamNorCal, ensure they are connected and loaded with firmware")
-	}
-
 	switch strings.ToLower(*logLevel) {
 	case "debug":
 		logW.SetLevel(log.LevelDebug)
@@ -74,10 +53,16 @@ func main() {
 
 	go startPortals(portals, tectC, errorC, quitC)
 
+	// Create a channel over which notifications will be sent for new
+	// arduino devices that are detected, the gateway listens
+	// for these and uses them for sending updates to the portal state
+	//
+	go plugAndPlay(quitC)
+
 	// The gateway bridges the status reports from portals down to arduinos
 	// using the serial protocols defined by the arduino team
 	//
-	go startGateway(*homeTecthulhu, arduinos, tectC, quitC)
+	go startGateway(*homeTecthulhu, tectC, quitC)
 
 	// If someone presses ctrl C then close our quitc channel to shutdown the system
 	// in an orderly way especially when dealing with device handles for the serial IO
@@ -100,11 +85,9 @@ func main() {
 		case err := <-errorC:
 			logW.Warn(err.Error())
 		case <-quitC:
-			for portalName, roles := range arduinos {
-				for _, dev := range roles {
-					logW.Warn(fmt.Sprintf("closing portal %s attached to device %s acting as a %s", portalName, dev.devName, dev.role))
-					dev.port.Close()
-				}
+			for _, dev := range getRunningDevices(*homeTecthulhu) {
+				stopRunningDevice(*homeTecthulhu, dev.devName)
+				logW.Warn(fmt.Sprintf("closing portal %s attached to device %s acting as a %s", *homeTecthulhu, dev.devName, dev.role))
 			}
 			return
 		}

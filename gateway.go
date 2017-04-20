@@ -24,8 +24,9 @@ type resChange struct {
 	ownerChange   string
 }
 
-func startGateway(homePortal string, arduinos map[string]map[string]*arduino, tectC chan *portalStatus, quitC chan bool) {
+func startGateway(homePortal string, tectC chan *portalStatus, quitC chan bool) {
 	for {
+
 		select {
 		case state := <-tectC:
 			// If there is not history add the fresh state as the previous state
@@ -118,12 +119,27 @@ func startGateway(homePortal string, arduinos map[string]map[string]*arduino, te
 				// After printing the overall health output the per resonator health wih delimiters
 				cmd = append(cmd, '\n')
 
-				for _, device := range arduinos[homePortal] {
-					if err := device.sendCmd(cmd); err != nil {
-						logW.Warn(fmt.Sprintf("%q ➡  device %s role '%s' got an error %s", cmd, device.devName, device.role, err.Error()))
-						continue
+				for _, device := range getRunningDevices(homePortal) {
+
+					if func() (result bool) {
+
+						result = false
+
+						defer func() {
+							if nil != recover() {
+								stopRunningDevice(homePortal, device.devName)
+							}
+						}()
+
+						if err := device.sendCmd(cmd); err != nil {
+							logW.Warn(fmt.Sprintf("%q ➡  device %s role '%s' got an error %s, taking device offline", cmd, device.devName, device.role, err.Error()))
+							stopRunningDevice(homePortal, device.devName)
+							return false
+						}
+						return true
+					}() {
+						logW.Info(fmt.Sprintf("%q ➡ %40.40s\t%s", cmd, device.role, device.devName))
 					}
-					logW.Info(fmt.Sprintf("%q ➡ %40.40s\t%s", cmd, device.role, device.devName))
 				}
 			}
 

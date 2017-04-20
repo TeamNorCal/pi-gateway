@@ -144,7 +144,6 @@ func findArduinos() (devices [][]string, err error) {
 			}
 			return nil, err
 		}
-
 	}
 }
 
@@ -155,42 +154,34 @@ type arduino struct {
 	role    string // The type of arduino that is present, core, or resonator cluster
 }
 
-// startDevices creates a map of the live arduinos that are open for
-// use by the gateway.  The map is first indexed by the name of the device,
-// and then indexed by the TeamNorCal role for the device
+// startDevice is used to start an individual arduino USB Serial device
 //
-func startDevices(devices map[string][]string) (ports map[string]map[string]*arduino, err error) {
+func startDevice(portalName string, devName string) (device *arduino, err error) {
 
-	ports = map[string]map[string]*arduino{}
+	device = &arduino{}
 
-	for portalName, devices := range devices {
-		for _, device := range devices {
-			dev, err := NewAudrino(device)
-			if err != nil {
-				logW.Error(fmt.Sprintf("unable to open arduino at %s due to %s", device, err.Error()), "error", err)
-				continue
-			}
-			line, err := dev.ping()
-			if err != nil {
-				logW.Error(fmt.Sprintf("unable to ping arduino at %s due to %s", device, err.Error()), "error", err)
-				continue
-			}
+	device.port, err = serial.OpenPort(&serial.Config{Name: devName, Baud: 115200, ReadTimeout: time.Duration(time.Second * 5)})
 
-			dev.role = line
-			dev.devName = device
-			dev.portal = portalName
-			logW.Info(fmt.Sprintf("arduino at %s has the role of '%s'", device, line))
-
-			if _, ok := ports[portalName]; !ok {
-				ports[portalName] = map[string]*arduino{}
-			}
-			ports[portalName][line] = dev
-		}
+	if err != nil {
+		logW.Error(fmt.Sprintf("unable to open arduino at %s due to %s", devName, err.Error()), "error", err)
+		return nil, err
 	}
-	if len(ports) == 0 {
-		return nil, fmt.Errorf("no audrinos were recognized as being TeamNorCal devices")
+
+	// Let the device stabilize before continuing
+	select {
+	case <-time.After(2 * time.Second):
 	}
-	return ports, nil
+
+	if device.role, err = device.ping(); err != nil {
+		device.close()
+
+		logW.Error(fmt.Sprintf("unable to ping arduino at %s due to %s", devName, err.Error()), "error", err)
+		return nil, err
+	}
+
+	device.devName = devName
+	device.portal = portalName
+	return device, nil
 }
 
 func findDevices() (devices []string) {
@@ -218,25 +209,12 @@ func findDevices() (devices []string) {
 	return devices
 }
 
-// NewAudrino is used to open a connection to an Audrino using
-// the serial device passed into the function
-//
-func NewAudrino(path string) (device *arduino, err error) {
+func (dev *arduino) close() (err error) {
+	defer func() {
+		dev.port = nil
+	}()
 
-	device = &arduino{}
-
-	device.port, err = serial.OpenPort(&serial.Config{Name: path, Baud: 115200, ReadTimeout: time.Duration(time.Second * 5)})
-
-	if err != nil {
-		return nil, err
-	}
-
-	// Let the device stabilize before continuing
-	select {
-	case <-time.After(2 * time.Second):
-	}
-
-	return device, nil
+	return dev.port.Close()
 }
 
 func (dev *arduino) ping() (line string, err error) {
