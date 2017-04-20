@@ -21,7 +21,7 @@ var devices = deviceCatalog{
 
 func plugAndPlay(quitC chan bool) {
 
-	candidates := map[string]map[string]bool{}
+	candidates := map[string]map[string]bool{*homeTecthulhu: map[string]bool{}}
 
 	for {
 		devices.devices = map[string]map[string]*arduino{*homeTecthulhu: map[string]*arduino{}}
