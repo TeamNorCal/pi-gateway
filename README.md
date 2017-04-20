@@ -119,6 +119,54 @@ The pi-gateway project supports cross platform builds for the gateway allowing i
 on a non Pi host, including AWS or GCP,  and then binaries targetted at Pi or other ARM 
 processors.  This is done using Docker.
 
+## Headless Installation
+
+The pi-gateway can be installed using systemd.  The pi-gateway.service file should be
+modified to ensure that the appropriate techthulu server referenced, and then copied 
+into the /lib/systemd/system/ directory.
+
+These instructions assume that the pi-gateway has been git cloned into your
+/home/pi/pi-gateway directory and that the binaries and other files are
+provided to the systemd daemon from this location.  If you have used a
+binary manually copied to the system or other arrangement you will need
+to modify the pi-gateway.service file before using the following
+instructions.
+
+If you are testing with an HttpRoller instance you should examine the 
+HttpRoller directory for the HttpRoller.service file and install this as well
+using the instructions found in that repository. When configuring the
+HttpRoller daemon you must use the path argument to point the server at
+the location for the pi-gateway simulator scenarios.  Another option is 
+only install the pi-gateway as a daemon and then star the HttpRoller using a
+shell for testing purposes, stopping and starting it to change scenarios.
+
+If HttpRoller is not used then you must modify the pi-gateway.service file
+to point at an alternative REST server offering JSON payloads for use with
+the gateway.
+
+By default logging for this server is sent to the system journal accessed
+using the journalctl command.
+
+Once the service files have been copied they can be included by using the
+commands:
+
+<pre>
+sudo cp pi-gateway.service /lib/systemd/system/pi-gateway.service
+sudo chmod 644 /lib/systemd/system/pi-gateway.service
+
+sudo systemctl daemon-reload
+sudo systemctl enable pi-gateway.service
+</pre>
+
+After headless installation the Pi should be rebooted. Logging output
+from the pi-gateway unit can be seen using the following command:
+
+<pre>
+sudo journalctl -u pi-gateway
+</pre>
+
+To follow the output use the '-f' option.
+
 ## Simulators
 
 The number of simulators are available.  All offer pros and cons and also more than one can

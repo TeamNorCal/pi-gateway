@@ -1,0 +1,14 @@
+[Unit]
+Description=Magnus Pi Gateway
+After=multi-user.target
+
+[Service]
+Type=idle
+Environment=LOGXI=*
+Environment=LOGXI_FORMAT=happy,maxcol=4096
+ExecStart=
+ExecStart=/home/pi/pi-gateway/bin/pi-gateway -loglevel=debug -home "Camp Navarro" -tecthulhus "http://127.0.0.1:12345"
+
+[Install]
+WantedBy=multi-user.target
+
