@@ -191,7 +191,7 @@ cd pi-gateway
 export GOPATH=`pwd`
 export GOBIN=`pwd`/bin
 go get github.com/karlmutch/HttpRoller
-bin/HttpRoller -listen=127.0.0.1:12345 -path="./simulator/scenarios/stable" -window 15s
+bin/HttpRoller -listen=127.0.0.1:12345 -path="./simulator/scenarios/stable"
 </pre>
 
 Manually retriving information from the simulator is as simple as:
@@ -200,10 +200,10 @@ Manually retriving information from the simulator is as simple as:
 wget -O- --quiet 127.0.0.1:12345/module/status/json
 </pre>
 
-A more complex test case drains all resonators over a 130 second period and can be run with the 
+A more complex test case drains all resonators over a 115 second period and can be run with the 
 test data generator as follows:
 
-bin/HttpRoller -listen=127.0.0.1:12345 -path="./simulator/scenarios/XM_drain_all" -window 130s
+bin/HttpRoller -listen=127.0.0.1:12345 -path="./simulator/scenarios/XM_drain_all"
 
 A programatic means of generating test JSON files dose exist to simplify complex ingress portal
 state changes.  The github.com/karlmutch/techthulu-generator tool is intended as an adhoc 
