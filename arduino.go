@@ -196,8 +196,7 @@ func findDevices() (devices []string) {
 			os.Exit(-3)
 		}
 		if len(deviceCatalog) == 0 {
-			logW.Fatal("No arduinos were specified and could not be found")
-			os.Exit(-2)
+			logW.Warn("No arduinos were specified and none could not be found, software will continue running and looking for devices")
 		}
 
 		devices = make([]string, 0, len(deviceCatalog))

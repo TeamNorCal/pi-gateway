@@ -21,10 +21,11 @@ var devices = deviceCatalog{
 
 func plugAndPlay(quitC chan bool) {
 
+	devices.devices = map[string]map[string]*arduino{*homeTecthulhu: map[string]*arduino{}}
+
 	candidates := map[string]map[string]bool{*homeTecthulhu: map[string]bool{}}
 
 	for {
-		devices.devices = map[string]map[string]*arduino{*homeTecthulhu: map[string]*arduino{}}
 		for _, device := range findDevices() {
 			// At the moment we only control a single portals audrinos however
 			// this can be changed very simply by using multiple names here
@@ -46,6 +47,7 @@ func plugAndPlay(quitC chan bool) {
 
 				device, err := startDevice(portalName, name)
 				if err != nil {
+					stopRunningDevice(portalName, name)
 					continue
 				}
 
@@ -89,6 +91,10 @@ func getRunningDevices(portal string) (devs map[string]*arduino) {
 }
 
 func stopRunningDevice(portal string, device string) {
+	defer func() {
+		recover()
+	}()
+
 	devices.Lock()
 	defer devices.Unlock()
 
