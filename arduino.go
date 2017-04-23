@@ -133,12 +133,12 @@ func findArduinos() (devices [][]string, err error) {
 				}
 				if strings.Contains(line, "ttyUSB") && strings.Contains(line, "USB_UART") {
 					details := strings.Split(line, " -")
-					lineParts := strings.Split(line, " -/_")
-					if len(lineParts) < 2 {
+					deviceParts := strings.Split(details[0], "/")
+					if len(deviceParts) < 2 {
 						logW.Warn(fmt.Sprintf("Unexpected device line format %s", line))
 						continue
 					}
-					devices = append(devices, []string{details[0], strings.TrimSpace(lineParts[1])})
+					devices = append(devices, []string{details[0], strings.Trim(deviceParts[2], "/")})
 					continue
 				}
 			}
