@@ -83,6 +83,7 @@ func getStatus(device string, statusC chan *portalStatus, errorC chan error) {
 		select {
 		case errorC <- err:
 		case <-time.After(2 * time.Second):
+			logW.Warn(fmt.Sprintf("could not send error for ignored portal status update %s", err.Error()))
 		}
 		return
 	}
@@ -93,6 +94,7 @@ func getStatus(device string, statusC chan *portalStatus, errorC chan error) {
 		select {
 		case errorC <- fmt.Errorf("portal status for %s was ignored", device):
 		case <-time.After(2 * time.Second):
+			logW.Warn("could not send error for ignored portal status update")
 		}
 	}
 }
@@ -109,6 +111,7 @@ func startPortals(portals []string, statusC chan *portalStatus, errorC chan erro
 	for {
 		select {
 		case <-poll.C:
+			logW.Trace(fmt.Sprintf("%d portals", len(portals)))
 			for _, address := range portals {
 				getStatus(address, statusC, errorC)
 			}

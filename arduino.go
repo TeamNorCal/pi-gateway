@@ -205,7 +205,7 @@ func findDevices() (devices []string) {
 
 		devices = make([]string, 0, len(deviceCatalog))
 		for _, attribs := range deviceCatalog {
-			logW.Info(fmt.Sprintf("Found arduino '%s' serial # '%s'", attribs[0], attribs[1]), "arduinoDevice", attribs[0], "audrinoSerial", attribs[1])
+			logW.Trace(fmt.Sprintf("arduino '%s' serial # '%s'", attribs[0], attribs[1]), "arduinoDevice", attribs[0], "audrinoSerial", attribs[1])
 			devices = append(devices, attribs[0])
 		}
 	}

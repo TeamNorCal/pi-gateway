@@ -39,6 +39,8 @@ func plugAndPlay(quitC chan bool) {
 		for _, device := range working {
 			if _, ok := candidates[*homeTecthulhu][device.devName]; ok {
 				delete(candidates[*homeTecthulhu], device.devName)
+			} else {
+				logW.Info(fmt.Sprintf("Discovered %s", device.devName))
 			}
 		}
 
@@ -80,6 +82,7 @@ func getRunningDevices(portal string) (devs map[string]*arduino) {
 
 	found, ok := devices.devices[portal]
 	if !ok {
+		logW.Warn(fmt.Sprintf("unknown portal %s", portal))
 		return map[string]*arduino{}
 	}
 

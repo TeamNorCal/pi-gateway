@@ -34,6 +34,8 @@ func main() {
 	logW.SetLevel(log.LevelInfo)
 
 	switch strings.ToLower(*logLevel) {
+	case "trace":
+		logW.SetLevel(log.LevelTrace)
 	case "debug":
 		logW.SetLevel(log.LevelDebug)
 	case "info":
@@ -44,11 +46,14 @@ func main() {
 		logW.SetLevel(log.LevelError)
 	case "fatal":
 		logW.SetLevel(log.LevelFatal)
+	default:
+		logW.Error("unrecognized log level specified")
 	}
 
 	tectC := make(chan *portalStatus, 1)
 	errorC := make(chan error, 1)
 	quitC := make(chan bool, 1)
+
 	portals := strings.Split(*tecthulhus, ",")
 
 	go startPortals(portals, tectC, errorC, quitC)

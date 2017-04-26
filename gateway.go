@@ -17,14 +17,8 @@ var (
 	lastState = map[string]*portalStatus{}
 )
 
-type resChange struct {
-	factionChange string
-	levelChange   int
-	healthChange  int
-	ownerChange   string
-}
-
 func startGateway(homePortal string, tectC chan *portalStatus, quitC chan bool) {
+
 	for {
 
 		select {
@@ -36,19 +30,6 @@ func startGateway(homePortal string, tectC chan *portalStatus, quitC chan bool) 
 			}
 
 			factionChange := lastState[state.Status.Title].Status.ControllingFaction != state.Status.ControllingFaction
-
-			// Detect any portal changes
-			//
-			/**
-						healthChange := lastState[state.Status.Title].Status.Health - state.Status.Health
-						levelChange := lastState[state.Status.Title].Status.Level - state.Status.Level
-
-						ownerChange := ""
-						if lastState[state.Status.Title].Status.Owner != state.Status.Owner {
-							ownerChange = state.Status.Owner
-						}
-			// Dont track individual resonator changes yet
-			**/
 
 			// Process the state updates into arduino CMDs and then send these to
 			// the arduinos that are listening and our associated with the home portal
@@ -119,11 +100,11 @@ func startGateway(homePortal string, tectC chan *portalStatus, quitC chan bool) 
 				// After printing the overall health output the per resonator health wih delimiters
 				cmd = append(cmd, '\n')
 
-				for _, device := range getRunningDevices(homePortal) {
+				devices := getRunningDevices(homePortal)
+				logW.Trace(fmt.Sprintf("sending data to %d devices", len(devices)))
 
-					if func() (result bool) {
-
-						result = false
+				for _, device := range devices {
+					func() {
 
 						defer func() {
 							if nil != recover() {
@@ -134,12 +115,10 @@ func startGateway(homePortal string, tectC chan *portalStatus, quitC chan bool) 
 						if err := device.sendCmd(cmd); err != nil {
 							logW.Warn(fmt.Sprintf("%q ➡  device %s role '%s' got an error %s, taking device offline", cmd, device.devName, device.role, err.Error()))
 							stopRunningDevice(homePortal, device.devName)
-							return false
+							return
 						}
-						return true
-					}() {
 						logW.Info(fmt.Sprintf("%q ➡ %40.40s\t%s", cmd, device.role, device.devName))
-					}
+					}()
 				}
 			}
 
