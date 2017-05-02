@@ -103,6 +103,8 @@ func startGateway(homePortal string, tectC chan *portalStatus, quitC chan bool) 
 				devices := getRunningDevices(homePortal)
 				logW.Trace(fmt.Sprintf("sending data to %d devices", len(devices)))
 
+				devicesSent := []string{}
+
 				for _, device := range devices {
 					func() {
 
@@ -117,9 +119,10 @@ func startGateway(homePortal string, tectC chan *portalStatus, quitC chan bool) 
 							stopRunningDevice(homePortal, device.devName)
 							return
 						}
-						logW.Info(fmt.Sprintf("%q ➡ %40.40s\t%s", cmd, device.role, device.devName))
+						devicesSent = append(devicesSent, device.devName)
 					}()
 				}
+				logW.Info(fmt.Sprintf("%q ➡ \t%v", cmd, devicesSent))
 			}
 
 			// Save the new state as the last known state
