@@ -273,3 +273,6 @@ https://github.com/moriyoshi/pulsego
 sudo apt-get install libsfml-dev
 https://bitbucket.org/krepa098/gosfml2/wiki/Home
 
+https://github.com/vchimishuk/alsa-go
+https://github.com/cvanderschuere/alsa-go
+https://github.com/runningwild/gorbis

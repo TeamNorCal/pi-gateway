@@ -50,9 +50,21 @@ func main() {
 		logW.Error("unrecognized log level specified")
 	}
 
+	quitC := make(chan bool, 1)
+
+	// AUdio comes with 2 mixed channels of audio, ambientC is a looped
+	// playback that will interrupt ambient playback as a new file name
+	// is recieved, and sfxC is a single effect that will interrupt
+	// any other playing sfx file
+	ambientC := make(chan string, 1)
+	sfxC := make(chan string, 1)
+
+	initAudio(ambientC, sfxC, quitC)
+
+	// portals encapsulate a JSon data feed from ingress techthulu nodes
+	//
 	tectC := make(chan *portalStatus, 1)
 	errorC := make(chan error, 1)
-	quitC := make(chan bool, 1)
 
 	portals := strings.Split(*tecthulhus, ",")
 
