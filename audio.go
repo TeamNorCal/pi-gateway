@@ -9,40 +9,30 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
-	"unsafe"
 
 	"github.com/karlmutch/termtables"
 
-	"github.com/xlab/portaudio-go/portaudio"
+	"github.com/cvanderschuere/alsa-go"
 	"github.com/xlab/vorbis-go/decoder"
-)
-
-const (
-	samplesPerChannel = 2048
-	bitDepth          = 16
-	sampleFormat      = portaudio.PaFloat32
 )
 
 var (
 	audioDir = flag.String("audioDir", "assets/sounds", "The directory in which the audio OGG formatted event files can be found")
+
+	controlChan = make(chan bool)
+	streamChan  = alsa.Init(controlChan)
 )
-
-func paError(err portaudio.Error) bool {
-	return portaudio.ErrorCode(err) != portaudio.PaNoError
-}
-
-func paErrorText(err portaudio.Error) string {
-	return portaudio.GetErrorText(err)
-}
 
 func initAudio(ambientC <-chan string, sfxC <-chan string, quitC <-chan bool) (err error) {
 
 	printDecoderInfo()
 
-	if paErr := portaudio.Initialize(); paError(paErr) {
-		return fmt.Errorf("%#v", paErr)
-	}
+	//Make stream
+	dataChan := make(chan alsa.AudioData, 100)
+	aStream := alsa.AudioStream{Channels: 2, Rate: 44100, SampleFormat: alsa.INT16_TYPE, DataStream: dataChan}
+
+	//Send stream
+	streamChan <- aStream
 
 	go runAudio(ambientC, sfxC, quitC)
 
@@ -50,6 +40,9 @@ func initAudio(ambientC <-chan string, sfxC <-chan string, quitC <-chan bool) (e
 }
 
 func runAudio(ambientC <-chan string, sfxC <-chan string, quitC <-chan bool) {
+
+	defer close(streamChan)
+
 	for {
 		select {
 		case fn := <-ambientC:
@@ -57,9 +50,6 @@ func runAudio(ambientC <-chan string, sfxC <-chan string, quitC <-chan bool) {
 		case fn := <-sfxC:
 			logW.Debug("playing %s", fn)
 		case <-quitC:
-			if paErr := portaudio.Terminate(); paError(paErr) {
-				logW.Warn(fmt.Sprintf("could not stop port audio due to %v", paError))
-			}
 			return
 		}
 	}
@@ -102,7 +92,7 @@ func decoderInfo(input string, table *termtables.Table) (err error) {
 	}
 	defer stream.Close()
 
-	dec, err := decoder.New(stream, samplesPerChannel)
+	dec, err := decoder.New(stream, 2048)
 	if err != nil {
 		return err
 	}
@@ -133,40 +123,4 @@ func fileInfoTable(name string, info decoder.Info, table *termtables.Table) {
 	}
 	table.AddRow("Bitstream", fmt.Sprintf("%d channel, %.1fHz", info.Channels, info.SampleRate))
 	table.AddRow("Encoded by", info.Vendor)
-}
-
-func paCallback(wg *sync.WaitGroup, channels int, samples <-chan [][]float32) portaudio.StreamCallback {
-	wg.Add(1)
-	return func(_ unsafe.Pointer, output unsafe.Pointer, sampleCount uint,
-		_ *portaudio.StreamCallbackTimeInfo, _ portaudio.StreamCallbackFlags, _ unsafe.Pointer) int32 {
-
-		const (
-			statusContinue = int32(portaudio.PaContinue)
-			statusComplete = int32(portaudio.PaComplete)
-		)
-
-		frame, ok := <-samples
-		if !ok {
-			wg.Done()
-			return statusComplete
-		}
-		if len(frame) > int(sampleCount) {
-			frame = frame[:sampleCount]
-		}
-
-		idx := 0
-		out := (*(*[]float32)(unsafe.Pointer(output)))[:int(sampleCount)*channels]
-
-		for _, sample := range frame {
-			if len(sample) > channels {
-				sample = sample[:channels]
-			}
-			for i := range sample {
-				out[idx] = sample[i]
-				idx++
-			}
-		}
-
-		return statusContinue
-	}
 }
