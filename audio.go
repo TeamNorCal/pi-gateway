@@ -1,14 +1,30 @@
 package main
 
 // This module is responsible for driving the audio
-// output of this project
+// output of this project.
+//
+// The audio portion of this project requires that
+// files be converted to aiff files in 2 channel,
+// 44100 Hz, pcm_s16le (16 Bit Signed Little Endian).
+//
+// The conversion from ogg format files to this format
+// can be done using the libav-tools package installed
+// using "sudo apt-get install libav-tools".  The
+// conversion is done using a command line such as,
+// "avconv -i assets/sounds/e-ambient.ogg -ar 44100 -ac 2 -acodec pcm_s16le assets/sounds/e-ambient.aiff".
+//
+// Playback using the same tools for testing purposes
+// can be done using
+// "aplay -f S16_LE -c 2 -r 44100 assets/sounds/e-ambient.aiff"
 
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/karlmutch/termtables"
 
@@ -18,41 +34,119 @@ import (
 
 var (
 	audioDir = flag.String("audioDir", "assets/sounds", "The directory in which the audio OGG formatted event files can be found")
-
-	controlChan = make(chan bool)
-	streamChan  = alsa.Init(controlChan)
 )
 
 func initAudio(ambientC <-chan string, sfxC <-chan string, quitC <-chan bool) (err error) {
 
 	printDecoderInfo()
 
-	//Make stream
-	dataChan := make(chan alsa.AudioData, 100)
-	aStream := alsa.AudioStream{Channels: 2, Rate: 44100, SampleFormat: alsa.INT16_TYPE, DataStream: dataChan}
-
-	//Send stream
-	streamChan <- aStream
-
 	go runAudio(ambientC, sfxC, quitC)
 
 	return nil
 }
 
-func runAudio(ambientC <-chan string, sfxC <-chan string, quitC <-chan bool) {
+// Sounds possible at this point
+//
+// e-ambient, r-ambient, n-ambient
+//
+// e-capture, r-capture, n-capture
+// e-loss, r-loss, n-loss
+// e-loss, r-loss, n-loss
+// e-resonator-deployed, r-resonator-deployed, n-resonator-deployed
+// e-resonator-destroyed, r-resonator-destroyed, n-resonator-destroyed
 
-	defer close(streamChan)
+func runAudio(ambientC <-chan string, sfxC <-chan string, quitC <-chan bool) {
 
 	for {
 		select {
 		case fn := <-ambientC:
-			logW.Debug("playing %s on loop", fn)
+			fn = filepath.Join(*audioDir, fn)
+
+			logW.Debug(fmt.Sprintf("playing %s on loop", fn))
+			playAmbient(fn, quitC)
 		case fn := <-sfxC:
 			logW.Debug("playing %s", fn)
 		case <-quitC:
 			return
 		}
 	}
+}
+
+func playAmbient(fp string, quitC <-chan bool) {
+	//Open test file
+	file, err := os.Open(fp)
+	if err != nil {
+		logW.Error(fmt.Sprintf("unable to open file %s due to %s", fp, err.Error()))
+		return
+	}
+	defer file.Close()
+
+	//Open ALSA pipe
+	controlChan := make(chan bool)
+	streamChan := alsa.Init(controlChan)
+
+	//Create stream
+	dataChan := make(chan alsa.AudioData, 100)
+	current_stream := alsa.AudioStream{Channels: 2, Rate: int(44100), SampleFormat: alsa.INT16_TYPE, DataStream: dataChan}
+
+	streamChan <- current_stream
+
+	data := make([]byte, 8192)
+
+	logW.Debug(fmt.Sprintf("playback of %s starting", fp))
+	defer logW.Debug(fmt.Sprintf("playback of %s done", fp))
+
+	func() {
+		for {
+			data = data[:cap(data)]
+			n, err := file.Read(data)
+			if err != nil {
+				if err == io.EOF {
+					return
+				}
+				fmt.Println(err)
+				return
+			}
+			data = data[:n]
+
+			select {
+			case current_stream.DataStream <- data:
+			case <-quitC:
+				return
+			}
+
+		}
+	}()
+}
+
+func testTone() {
+	audioC := make(chan alsa.AudioData, 100)
+	controlC := make(chan bool)
+
+	streamC := alsa.Init(controlC)
+	defer close(streamC)
+
+	//Send stream
+	streamC <- alsa.AudioStream{Channels: 2, Rate: 4410, SampleFormat: alsa.INT16_TYPE, DataStream: audioC}
+
+	//Create sample to play
+	b := []byte{0x18, 0x2d, 0x44, 0x54, 0xfb, 0x21, 0x09, 0x40} //PI
+
+	for i := 0; i < 5; i++ {
+		b = append(b, b...)
+	}
+
+	logW.Trace("start tone")
+	stopAt := time.Now().Add(1 * time.Second)
+
+	for {
+		audioC <- b
+		if time.Now().After(stopAt) {
+			break
+		}
+	}
+
+	logW.Trace("end tone")
 }
 
 func printDecoderInfo() {

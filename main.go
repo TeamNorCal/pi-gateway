@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/mgutz/logxi/v1"
 )
@@ -80,6 +81,14 @@ func main() {
 	// using the serial protocols defined by the arduino team
 	//
 	go startGateway(*homeTecthulhu, tectC, quitC)
+
+	// Now send the default amibent setting to the audio
+	// subsystem
+	select {
+	case ambientC <- "e-ambient.aiff":
+	case <-time.After(3 * time.Second):
+		logW.Warn("could not set the portal default ambient noise")
+	}
 
 	// If someone presses ctrl C then close our quitc channel to shutdown the system
 	// in an orderly way especially when dealing with device handles for the serial IO
