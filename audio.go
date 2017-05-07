@@ -38,7 +38,7 @@ var (
 	audioDir = flag.String("audioDir", "assets/sounds", "The directory in which the audio OGG formatted event files can be found")
 )
 
-func initAudio(ambientC <-chan string, sfxC <-chan string, quitC <-chan bool) (err error) {
+func initAudio(ambientC <-chan string, sfxC <-chan []string, quitC <-chan bool) (err error) {
 
 	printDecoderInfo()
 
@@ -47,25 +47,130 @@ func initAudio(ambientC <-chan string, sfxC <-chan string, quitC <-chan bool) (e
 	return nil
 }
 
+type effects struct {
+	wakeup chan bool
+	sfxs   []string
+	sync.Mutex
+}
+
+var (
+	sfxs = effects{
+		wakeup: make(chan bool, 1),
+		sfxs:   []string{},
+	}
+
+	//Open ALSA pipe
+	controlC = make(chan bool)
+	//Create stream
+	streamC = alsa.Init(controlC)
+)
+
+func playSFX(quitC <-chan bool) {
+
+	//stream := alsa.AudioStream{Channels: 2,
+	//	Rate:         int(44100),
+	//	SampleFormat: alsa.INT16_TYPE,
+	//	DataStream:   make(chan alsa.AudioData, 100),
+	//}
+
+	// streamC <- stream
+
+	defer func() {
+		sfxs.Lock()
+		close(sfxs.wakeup)
+		sfxs.Unlock()
+	}()
+
+	sfxs.Lock()
+	wakeup := sfxs.wakeup
+	sfxs.Unlock()
+
+	for {
+		for {
+			fp := ""
+			sfxs.Lock()
+			if len(sfxs.sfxs) != 0 {
+				fp = sfxs.sfxs[0]
+				sfxs.sfxs = sfxs.sfxs[1:]
+			}
+			sfxs.Unlock()
+
+			if len(fp) == 0 {
+				break
+			}
+			logW.Debug(fmt.Sprintf("playing %s", fp))
+
+			func() {
+				file, err := os.Open(fp)
+				if err != nil {
+					logW.Warn(fmt.Sprintf("sfx file %s open failed due to %s", fp, err.Error()))
+					return
+				}
+				defer file.Close()
+
+				data := make([]byte, 8192)
+
+				for {
+					data = data[:cap(data)]
+					n, err := file.Read(data)
+					if err != nil {
+						if err == io.EOF {
+							return
+						}
+						logW.Warn(err.Error())
+						return
+					}
+					data = data[:n]
+
+					//select {
+					//case stream.DataStream <- data:
+					//case <-quitC:
+					//	return
+					//}
+				}
+			}()
+		}
+		select {
+		case <-wakeup:
+		case <-time.After(time.Second):
+		case <-quitC:
+			return
+		}
+	}
+}
+
 // Sounds possible at this point
 //
 // e-ambient, r-ambient, n-ambient
 //
 // e-capture, r-capture, n-capture
 // e-loss, r-loss, n-loss
-// e-loss, r-loss, n-loss
-// e-resonator-deployed, r-resonator-deployed, n-resonator-deployed
-// e-resonator-destroyed, r-resonator-destroyed, n-resonator-destroyed
+// e-resonator-deployed, r-resonator-deployed
+// e-resonator-destroyed, r-resonator-destroyed
 
-func runAudio(ambientC <-chan string, sfxC <-chan string, quitC <-chan bool) {
+func runAudio(ambientC <-chan string, sfxC <-chan []string, quitC <-chan bool) {
 
 	go playAmbient(ambientC, quitC)
+
+	go playSFX(quitC)
 
 	for {
 		select {
 
-		case fn := <-sfxC:
-			logW.Debug("playing %s", fn)
+		case fns := <-sfxC:
+			if len(fns) != 0 {
+				sfxs.Lock()
+				for _, fn := range fns {
+					sfxs.sfxs = append(sfxs.sfxs, filepath.Join(*audioDir, fn+".aiff"))
+				}
+				// Wait a maximum of three seconds to wake up the audio
+				// player for sound effects
+				select {
+				case sfxs.wakeup <- true:
+				case <-time.After(3 * time.Second):
+				}
+				sfxs.Unlock()
+			}
 		case <-quitC:
 			return
 		}
@@ -96,20 +201,13 @@ func playAmbient(ambientC <-chan string, quitC <-chan bool) {
 		}
 	}()
 
-	//Open ALSA pipe
-	controlChan := make(chan bool)
-	defer func() {
-		controlChan <- false
-		close(controlChan)
-	}()
-	dataChan := make(chan alsa.AudioData, 100)
-	defer close(dataChan)
+	stream := alsa.AudioStream{Channels: 2,
+		Rate:         int(44100),
+		SampleFormat: alsa.INT16_TYPE,
+		DataStream:   make(chan alsa.AudioData, 100),
+	}
 
-	//Create stream
-	streamChan := alsa.Init(controlChan)
-	current_stream := alsa.AudioStream{Channels: 2, Rate: int(44100), SampleFormat: alsa.INT16_TYPE, DataStream: dataChan}
-
-	streamChan <- current_stream
+	streamC <- stream
 
 	data := make([]byte, 8192)
 
@@ -120,7 +218,7 @@ func playAmbient(ambientC <-chan string, quitC <-chan bool) {
 			ambient.Lock()
 			if fp != ambient.fp {
 				if ambient.file != nil {
-					logW.Debug(fmt.Sprintf("playback of %s stopped", ambient.fp))
+					logW.Debug(fmt.Sprintf("playback of %s stopped", fp))
 					ambient.file.Close()
 					ambient.file = nil
 				}
@@ -157,7 +255,7 @@ func playAmbient(ambientC <-chan string, quitC <-chan bool) {
 			data = data[:n]
 
 			select {
-			case current_stream.DataStream <- data:
+			case stream.DataStream <- data:
 			case <-quitC:
 				return
 			}

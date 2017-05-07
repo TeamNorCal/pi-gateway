@@ -57,7 +57,7 @@ func main() {
 	// is recieved, and sfxC is a single effect that will interrupt
 	// any other playing sfx file
 	ambientC := make(chan string, 1)
-	sfxC := make(chan string, 1)
+	sfxC := make(chan []string, 1)
 
 	initAudio(ambientC, sfxC, quitC)
 
@@ -79,7 +79,7 @@ func main() {
 	// The gateway bridges the status reports from portals down to arduinos
 	// using the serial protocols defined by the arduino team
 	//
-	go startGateway(*homeTecthulhu, tectC, ambientC, quitC)
+	go startGateway(*homeTecthulhu, tectC, ambientC, sfxC, quitC)
 
 	// If someone presses ctrl C then close our quitc channel to shutdown the system
 	// in an orderly way especially when dealing with device handles for the serial IO

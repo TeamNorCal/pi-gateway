@@ -18,10 +18,15 @@ var (
 	lastState = map[string]*portalStatus{}
 )
 
-func startGateway(homePortal string, tectC chan *portalStatus, ambientC chan<- string, quitC chan bool) {
+func startGateway(homePortal string, tectC chan *portalStatus, ambientC chan<- string, sfxC chan<- []string, quitC chan bool) {
+
+	// Used to trigger a manual update for the ambient noise effects
+	forceAmbient := false
+
+	// Used to track the addition and reduction in the number of resonators
+	resCount := 0
 
 	for {
-		forceAmbient := false
 		select {
 		case state := <-tectC:
 			// If there is not history add the fresh state as the previous state
@@ -30,30 +35,71 @@ func startGateway(homePortal string, tectC chan *portalStatus, ambientC chan<- s
 				lastState[state.Status.Title] = state
 				forceAmbient = true
 			}
+			// Sounds effects that are gathered as a result of state
+			// and played back later
+			sfxs := []string{}
 
 			factionChange := lastState[state.Status.Title].Status.ControllingFaction != state.Status.ControllingFaction
 
-			if factionChange || forceAmbient {
-				fn := ""
-				switch state.Status.ControllingFaction {
+			if factionChange {
+
+				if resCount != 0 {
+					// Trigger the res destroyed audio for the last faction to
+					// own the portal
+					resCount = 0
+				}
+				// e-loss, r-loss, n-loss
+				switch lastState[state.Status.Title].Status.ControllingFaction {
 				case "0":
-					fn = "n-ambient"
+					sfxs = append(sfxs, "n-loss")
 				case "1":
-					fn = "e-ambient"
+					sfxs = append(sfxs, "e-loss")
 				case "2":
-					fn = "r-ambient"
+					sfxs = append(sfxs, "r-loss")
 				default:
 					logW.Warn(fmt.Sprintf("unknown faction '%s'", state.Status.ControllingFaction))
 				}
-				if fn != "" {
-					select {
-					case ambientC <- fn:
-					case <-time.After(3 * time.Second):
-					}
+				switch state.Status.ControllingFaction {
+				case "0":
+					sfxs = append(sfxs, "n-capture")
+				case "1":
+					sfxs = append(sfxs, "e-capture")
+				case "2":
+					sfxs = append(sfxs, "r-capture")
+				default:
+					logW.Warn(fmt.Sprintf("unknown faction '%s'", state.Status.ControllingFaction))
 				}
-				forceAmbient = false
+			} else {
+				// If the new state was not a change of faction did the number
+				// of resoinators change
 			}
 
+			if factionChange || forceAmbient {
+				ambient := ""
+				switch state.Status.ControllingFaction {
+				case "0":
+					ambient = "n-ambient"
+				case "1":
+					ambient = "e-ambient"
+				case "2":
+					ambient = "r-ambient"
+				default:
+					logW.Warn(fmt.Sprintf("unknown faction '%s'", state.Status.ControllingFaction))
+				}
+				forceAmbient = false
+				select {
+				case ambientC <- ambient:
+				case <-time.After(3 * time.Second):
+				}
+			}
+
+			// Check for sound effects that need to be played
+			if len(sfxs) != 0 {
+				select {
+				case sfxC <- sfxs:
+				case <-time.After(3 * time.Second):
+				}
+			}
 			// Process the state updates into arduino CMDs and then send these to
 			// the arduinos that are listening and our associated with the home portal
 			// in any functional capacity
