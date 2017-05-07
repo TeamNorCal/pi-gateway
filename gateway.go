@@ -7,6 +7,7 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"time"
 )
 
 var (
@@ -17,19 +18,41 @@ var (
 	lastState = map[string]*portalStatus{}
 )
 
-func startGateway(homePortal string, tectC chan *portalStatus, quitC chan bool) {
+func startGateway(homePortal string, tectC chan *portalStatus, ambientC chan<- string, quitC chan bool) {
 
 	for {
-
+		forceAmbient := false
 		select {
 		case state := <-tectC:
 			// If there is not history add the fresh state as the previous state
 			//
 			if _, ok := lastState[state.Status.Title]; !ok {
 				lastState[state.Status.Title] = state
+				forceAmbient = true
 			}
 
 			factionChange := lastState[state.Status.Title].Status.ControllingFaction != state.Status.ControllingFaction
+
+			if factionChange || forceAmbient {
+				fn := ""
+				switch state.Status.ControllingFaction {
+				case "0":
+					fn = "n-ambient"
+				case "1":
+					fn = "e-ambient"
+				case "2":
+					fn = "r-ambient"
+				default:
+					logW.Warn(fmt.Sprintf("unknown faction '%s'", state.Status.ControllingFaction))
+				}
+				if fn != "" {
+					select {
+					case ambientC <- fn:
+					case <-time.After(3 * time.Second):
+					}
+				}
+				forceAmbient = false
+			}
 
 			// Process the state updates into arduino CMDs and then send these to
 			// the arduinos that are listening and our associated with the home portal

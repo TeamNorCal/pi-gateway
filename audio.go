@@ -18,12 +18,14 @@ package main
 // "aplay -f S16_LE -c 2 -r 44100 assets/sounds/e-ambient.aiff"
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/karlmutch/termtables"
@@ -57,13 +59,11 @@ func initAudio(ambientC <-chan string, sfxC <-chan string, quitC <-chan bool) (e
 
 func runAudio(ambientC <-chan string, sfxC <-chan string, quitC <-chan bool) {
 
+	go playAmbient(ambientC, quitC)
+
 	for {
 		select {
-		case fn := <-ambientC:
-			fn = filepath.Join(*audioDir, fn)
 
-			logW.Debug(fmt.Sprintf("playing %s on loop", fn))
-			playAmbient(fn, quitC)
 		case fn := <-sfxC:
 			logW.Debug("playing %s", fn)
 		case <-quitC:
@@ -72,40 +72,87 @@ func runAudio(ambientC <-chan string, sfxC <-chan string, quitC <-chan bool) {
 	}
 }
 
-func playAmbient(fp string, quitC <-chan bool) {
-	//Open test file
-	file, err := os.Open(fp)
-	if err != nil {
-		logW.Error(fmt.Sprintf("unable to open file %s due to %s", fp, err.Error()))
-		return
-	}
-	defer file.Close()
+type ambientFP struct {
+	fp   string
+	file *os.File
+	sync.Mutex
+}
+
+func playAmbient(ambientC <-chan string, quitC <-chan bool) {
+
+	ambient := ambientFP{}
+
+	go func() {
+		for {
+			select {
+			case fn := <-ambientC:
+				ambient.Lock()
+				ambient.fp = filepath.Join(*audioDir, fn)
+				ambient.fp += ".aiff"
+				ambient.Unlock()
+			case <-quitC:
+				return
+			}
+		}
+	}()
 
 	//Open ALSA pipe
 	controlChan := make(chan bool)
-	streamChan := alsa.Init(controlChan)
+	defer func() {
+		controlChan <- false
+		close(controlChan)
+	}()
+	dataChan := make(chan alsa.AudioData, 100)
+	defer close(dataChan)
 
 	//Create stream
-	dataChan := make(chan alsa.AudioData, 100)
+	streamChan := alsa.Init(controlChan)
 	current_stream := alsa.AudioStream{Channels: 2, Rate: int(44100), SampleFormat: alsa.INT16_TYPE, DataStream: dataChan}
 
 	streamChan <- current_stream
 
 	data := make([]byte, 8192)
 
-	logW.Debug(fmt.Sprintf("playback of %s starting", fp))
-	defer logW.Debug(fmt.Sprintf("playback of %s done", fp))
-
 	func() {
+		fp := ""
+		err := errors.New("")
 		for {
+			ambient.Lock()
+			if fp != ambient.fp {
+				if ambient.file != nil {
+					logW.Debug(fmt.Sprintf("playback of %s stopped", ambient.fp))
+					ambient.file.Close()
+					ambient.file = nil
+				}
+				if ambient.fp != "" {
+					if ambient.file, err = os.Open(ambient.fp); err != nil {
+						logW.Warn(fmt.Sprintf("ambient file %s open failed due to %s, clearing request", ambient.fp, err.Error()))
+						ambient.fp = ""
+						continue
+					}
+					fp = ambient.fp
+					logW.Debug(fmt.Sprintf("playback of %s starting", ambient.fp))
+				}
+
+			}
+			ambient.Unlock()
+			if ambient.file == nil {
+				select {
+				case <-time.After(250 * time.Millisecond):
+				}
+				continue
+			}
+
 			data = data[:cap(data)]
-			n, err := file.Read(data)
+			n, err := ambient.file.Read(data)
 			if err != nil {
 				if err == io.EOF {
-					return
+					ambient.file.Seek(0, 0)
+					logW.Trace(fmt.Sprintf("rewound %s", fp))
+					continue
 				}
-				fmt.Println(err)
-				return
+				logW.Warn(err.Error())
+				continue
 			}
 			data = data[:n]
 
@@ -114,7 +161,6 @@ func playAmbient(fp string, quitC <-chan bool) {
 			case <-quitC:
 				return
 			}
-
 		}
 	}()
 }
