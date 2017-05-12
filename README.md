@@ -251,17 +251,18 @@ Googles Low Level Library - https://periph.io/
 
 ## Stretch Goals
 
-Support MIDI style music driven by glyphs appearing in the JSon stream, output to standard Pi Audio jack
-The USB ports on the pi will be used for line delimited ASCII text messages arriving from the Audrino.
+Audio support based upon triggered events
 
-## Additional reference materials
+#Port Audio needs a decoder to go with it, or we use the tools from avrdude to generate aiff tools (preferred at this time)
+
+sudo apt-get remove libasound2 openjdk-7-jdk
+apt-get install portaudio19-dev libasound2-dev libvorbis-dev alsa-utils alsa-tools alsa-oss alsaplayer mpg321 alsaplayer-alsa alsa-base
+
+go get github.com/gordonklaus/portaudio
+
+
 
 http://investigate.ingress.com/2017/03/16/glyph-music/
-
-#Port Audio needs a decoder to go with it
-apt-get install portaudio19-dev
-apt-get install libasound-dev
-github.com/gordonklaus/portaudio
 
 #Does not work
 sudo apt-get install libsndfile-dev
