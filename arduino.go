@@ -224,7 +224,7 @@ func (dev *arduino) ping() (line string, err error) {
 
 	dev.port.Flush()
 
-	n, err := dev.port.Write([]byte("*\n"))
+	n, err := dev.port.Write([]byte("**********************\n"))
 	if err != nil {
 		return line, err
 	}

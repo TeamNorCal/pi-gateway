@@ -18,6 +18,13 @@ var (
 	lastState = map[string]*portalStatus{}
 )
 
+func encodePercent(v int) byte {
+	if v == 0 {
+		return ' '
+	}
+	return byte(int(' ') + (v / 2))
+}
+
 func startGateway(homePortal string, tectC chan *portalStatus, ambientC chan<- string, sfxC chan<- []string, quitC chan bool) {
 
 	// Used to trigger a manual update for the ambient noise effects
@@ -104,7 +111,7 @@ func startGateway(homePortal string, tectC chan *portalStatus, ambientC chan<- s
 			// the arduinos that are listening and our associated with the home portal
 			// in any functional capacity
 			if homePortal == state.Status.Title {
-				cmd := []byte{}
+				cmd := make([]byte, 0, 32)
 				switch state.Status.ControllingFaction {
 				case "0":
 					if factionChange {
@@ -128,7 +135,8 @@ func startGateway(homePortal string, tectC chan *portalStatus, ambientC chan<- s
 
 				// Now dump out resonator levels, one character for each, and record the health values
 				resCmd := []byte{'0', '0', '0', '0', '0', '0', '0', '0'}
-				resHealth := []string{"0", "0", "0", "0", "0", "0", "0", "0"}
+				// Health values are encoded percentages, space for 0%
+				resHealth := []byte{' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}
 				// Translate an ascii compass point to a position in the resonators array
 				resPositionMap := map[string]int{"N": 2, "NE": 1, "E": 0, "SE": 7, "S": 6, "SW": 5, "W": 4, "NW": 3}
 
@@ -138,19 +146,14 @@ func startGateway(homePortal string, tectC chan *portalStatus, ambientC chan<- s
 						// position to the single ASCII digit the represents the level of the
 						// resonator
 						resCmd[position] = strconv.Itoa(res.Level)[0]
-						resHealth[position] = strconv.Itoa(res.Health)
+						resHealth[position] = encodePercent(res.Health)
 					}
 				}
 
 				cmd = append(cmd, resCmd...)
-				cmd = append(cmd, ':')
-				cmd = append(cmd, []byte(strconv.FormatInt(int64(state.Status.Health), 10))...)
-				for _, health := range resHealth {
-					cmd = append(cmd, ':')
-					cmd = append(cmd, []byte(health)...)
-				}
+				cmd = append(cmd, encodePercent(state.Status.Health))
+				cmd = append(cmd, resHealth...)
 
-				cmd = append(cmd, ':')
 				// Mods array handling
 				mods := []byte{' ', ' ', ' ', ' '}
 				modsMap := map[string]byte{"FA": '0', "HS-C": '1',
@@ -164,7 +167,6 @@ func startGateway(homePortal string, tectC chan *portalStatus, ambientC chan<- s
 					}
 				}
 				cmd = append(cmd, mods...)
-				cmd = append(cmd, ':')
 
 				// After printing the overall health output the per resonator health wih delimiters
 				cmd = append(cmd, '\n')
@@ -191,7 +193,7 @@ func startGateway(homePortal string, tectC chan *portalStatus, ambientC chan<- s
 						devicesSent = append(devicesSent, device.devName)
 					}()
 				}
-				logW.Info(fmt.Sprintf("%q ➡ \t%v", cmd, devicesSent))
+				logW.Info(fmt.Sprintf("%q ➡ %v", cmd, devicesSent))
 			}
 
 			// Save the new state as the last known state
