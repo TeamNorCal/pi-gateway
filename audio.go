@@ -58,22 +58,21 @@ var (
 		wakeup: make(chan bool, 1),
 		sfxs:   []string{},
 	}
-
-	//Open ALSA pipe
-	controlC = make(chan bool)
-	//Create stream
-	streamC = alsa.Init(controlC)
 )
 
 func playSFX(quitC <-chan bool) {
+	//Open ALSA pipe
+	controlC := make(chan bool)
+	//Create stream
+	streamC := alsa.Init(controlC)
 
-	//stream := alsa.AudioStream{Channels: 2,
-	//	Rate:         int(44100),
-	//	SampleFormat: alsa.INT16_TYPE,
-	//	DataStream:   make(chan alsa.AudioData, 100),
-	//}
+	stream := alsa.AudioStream{Channels: 2,
+		Rate:         int(44100),
+		SampleFormat: alsa.INT16_TYPE,
+		DataStream:   make(chan alsa.AudioData, 100),
+	}
 
-	// streamC <- stream
+	streamC <- stream
 
 	defer func() {
 		sfxs.Lock()
@@ -122,11 +121,11 @@ func playSFX(quitC <-chan bool) {
 					}
 					data = data[:n]
 
-					//select {
-					//case stream.DataStream <- data:
-					//case <-quitC:
-					//	return
-					//}
+					select {
+					case stream.DataStream <- data:
+					case <-quitC:
+						return
+					}
 				}
 			}()
 		}
@@ -200,6 +199,11 @@ func playAmbient(ambientC <-chan string, quitC <-chan bool) {
 			}
 		}
 	}()
+
+	//Open ALSA pipe
+	controlC := make(chan bool)
+	//Create stream
+	streamC := alsa.Init(controlC)
 
 	stream := alsa.AudioStream{Channels: 2,
 		Rate:         int(44100),

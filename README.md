@@ -249,18 +249,18 @@ Custom Hardware (if needed, not likely but an out if we need it)
 Googles Low Level Library - https://periph.io/
 </pre>
 
-## Stretch Goals
 
-Audio support based upon triggered events
+##Audio support based upon triggered events
 
-#Port Audio needs a decoder to go with it, or we use the tools from avrdude to generate aiff tools (preferred at this time)
+In order to run the audio portion of the project the following libraries need to be installed.
 
 sudo apt-get remove libasound2 openjdk-7-jdk
 apt-get install portaudio19-dev libasound2-dev libvorbis-dev alsa-utils alsa-tools alsa-oss alsaplayer mpg321 alsaplayer-alsa alsa-base
 
-go get github.com/gordonklaus/portaudio
+You will also need to enable the dmix audio output otherwise the software will fail.  Instructions for enabling the default audio mixer can be found at, http://alsa.opensrc.org/Dmix#5._The_simple_approach:.
 
 
+## Stretch Goals
 
 http://investigate.ingress.com/2017/03/16/glyph-music/
 
