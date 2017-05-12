@@ -122,7 +122,7 @@ func playSFX(quitC <-chan bool) {
 					data = data[:n]
 
 					select {
-					case stream.DataStream <- data:
+					case stream.DataStream <- append([]byte(nil), data[:n]...):
 					case <-quitC:
 						return
 					}
@@ -256,10 +256,9 @@ func playAmbient(ambientC <-chan string, quitC <-chan bool) {
 				logW.Warn(err.Error())
 				continue
 			}
-			data = data[:n]
 
 			select {
-			case stream.DataStream <- data:
+			case stream.DataStream <- append([]byte(nil), data[:n]...):
 			case <-quitC:
 				return
 			}
