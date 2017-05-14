@@ -259,6 +259,16 @@ apt-get install portaudio19-dev libasound2-dev libvorbis-dev alsa-utils alsa-too
 
 You will also need to enable the dmix audio output otherwise the software will fail.  Instructions for enabling the default audio mixer can be found at, http://alsa.opensrc.org/Dmix#5._The_simple_approach:.
 
+The raspberry pi kernel also needs its support for mmap enabled.  You should have the following
+line added to your /boot/config.txt file:
+
+dtoverlay=i2s-mmap
+
+The following page has information about setting the volume, https://bbs.archlinux.org/viewtopic.php?id=134532.  Use the PCM devicei as the name not Master.
+
+The PCM mix device can vary between installs, one page that has an approach for configuring the sound can be found at, https://www.raspberrypi.org/forums/viewtopic.php?p=1147994.
+
+Another at the reference mentioned above.
 
 ## Stretch Goals
 
