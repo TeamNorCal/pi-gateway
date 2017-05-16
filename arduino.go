@@ -164,7 +164,7 @@ func startDevice(portalName string, devName string) (device *arduino, err error)
 
 	device = &arduino{}
 
-	device.port, err = serial.OpenPort(&serial.Config{Name: devName, Baud: 115200, ReadTimeout: time.Duration(time.Second * 5)})
+	device.port, err = serial.OpenPort(&serial.Config{Name: devName, Baud: 9600, ReadTimeout: time.Duration(time.Second * 5)})
 
 	if err != nil {
 		logW.Error(fmt.Sprintf("unable to open arduino at %s due to %s", devName, err.Error()), "error", err)
