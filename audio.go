@@ -15,7 +15,7 @@ package main
 //
 // Playback using the same tools for testing purposes
 // can be done using
-// "aplay -f S16_LE -c 2 -r 44100 assets/sounds/e-ambient.aiff"
+// "aplay -D plug:dmix -f S16_LE -c 2 -r 44100 assets/sounds/e-ambient.aiff"
 
 import (
 	"errors"
