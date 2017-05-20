@@ -63,7 +63,7 @@ func main() {
 
 	// portals encapsulate a JSon data feed from ingress techthulu nodes
 	//
-	tectC := make(chan *portalStatus, 1)
+	tectC := make(chan *portalStatus, 3)
 	errorC := make(chan error, 1)
 
 	portals := strings.Split(*tecthulhus, ",")

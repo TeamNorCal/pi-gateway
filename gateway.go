@@ -7,6 +7,7 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -25,6 +26,11 @@ func encodePercent(v int) byte {
 	return byte(int(' ') + (v / 2))
 }
 
+type lastStatus struct {
+	status *portalStatus
+	sync.Mutex
+}
+
 func startGateway(homePortal string, tectC chan *portalStatus, ambientC chan<- string, sfxC chan<- []string, quitC chan bool) {
 
 	// Used to trigger a manual update for the ambient noise effects
@@ -33,9 +39,30 @@ func startGateway(homePortal string, tectC chan *portalStatus, ambientC chan<- s
 	// Used to track the addition and reduction in the number of resonators
 	resCount := 0
 
+	// Track arriving status information
+	status := lastStatus{
+		status: nil,
+	}
+
+	// Time for push changes to the arduinos indepedently of the portal
+	// status
+	refresh := time.NewTicker(300 * time.Millisecond)
+	defer refresh.Stop()
+
 	for {
 		select {
 		case state := <-tectC:
+			status.Lock()
+			status.status = state
+			status.Unlock()
+		case <-refresh.C:
+			status.Lock()
+			state := status.status
+			status.Unlock()
+
+			if state == nil {
+				continue
+			}
 			// If there is not history add the fresh state as the previous state
 			//
 			if _, ok := lastState[state.Status.Title]; !ok {

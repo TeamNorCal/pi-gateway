@@ -67,6 +67,9 @@ func checkPortal(device string) (status *portalStatus, err error) {
 	}
 
 	err = json.Unmarshal(body, &status)
+	if err != nil {
+		logW.Debug(string(body))
+	}
 	return status, err
 }
 
@@ -80,22 +83,26 @@ func getStatus(device string, statusC chan *portalStatus, errorC chan error) {
 
 	if err != nil {
 		err = fmt.Errorf("portal status for %s could not be retrieved due to %s", device, err.Error())
-		select {
-		case errorC <- err:
-		case <-time.After(2 * time.Second):
-			logW.Warn(fmt.Sprintf("could not send error for ignored portal status update %s", err.Error()))
-		}
+		go func() {
+			select {
+			case errorC <- err:
+			case <-time.After(500 * time.Millisecond):
+				logW.Warn(fmt.Sprintf("could not send, error for ignored portal status update %s", err.Error()))
+			}
+		}()
 		return
 	}
 
 	select {
 	case statusC <- status:
-	case <-time.After(2 * time.Second):
-		select {
-		case errorC <- fmt.Errorf("portal status for %s was ignored", device):
-		case <-time.After(2 * time.Second):
-			logW.Warn("could not send error for ignored portal status update")
-		}
+	case <-time.After(750 * time.Millisecond):
+		go func() {
+			select {
+			case errorC <- fmt.Errorf("portal status for %s had to be skipped", device):
+			case <-time.After(2 * time.Second):
+				logW.Warn("could not send error for ignored portal status update")
+			}
+		}()
 	}
 }
 
