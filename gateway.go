@@ -46,7 +46,7 @@ func startGateway(homePortal string, tectC chan *portalStatus, ambientC chan<- s
 
 	// Time for push changes to the arduinos indepedently of the portal
 	// status
-	refresh := time.NewTicker(300 * time.Millisecond)
+	refresh := time.NewTicker(2 * time.Second)
 	defer refresh.Stop()
 
 	for {
@@ -55,20 +55,29 @@ func startGateway(homePortal string, tectC chan *portalStatus, ambientC chan<- s
 			status.Lock()
 			status.status = state
 			status.Unlock()
+
 		case <-refresh.C:
 			status.Lock()
 			state := status.status
 			status.Unlock()
 
 			if state == nil {
+				logW.Trace("no data")
 				continue
 			}
+
+			if homePortal != state.Status.Title {
+				logW.Warn("home portal '%s' did not match the data from Niantic '%s'", homePortal, state.Status.Title)
+				continue
+			}
+
 			// If there is not history add the fresh state as the previous state
 			//
 			if _, ok := lastState[state.Status.Title]; !ok {
 				lastState[state.Status.Title] = state
 				forceAmbient = true
 			}
+
 			// Sounds effects that are gathered as a result of state
 			// and played back later
 			sfxs := []string{}
@@ -105,7 +114,7 @@ func startGateway(homePortal string, tectC chan *portalStatus, ambientC chan<- s
 				}
 			} else {
 				// If the new state was not a change of faction did the number
-				// of resoinators change
+				// of resonators change
 			}
 
 			if factionChange || forceAmbient {
@@ -137,27 +146,25 @@ func startGateway(homePortal string, tectC chan *portalStatus, ambientC chan<- s
 			// Process the state updates into arduino CMDs and then send these to
 			// the arduinos that are listening and our associated with the home portal
 			// in any functional capacity
-			if homePortal == state.Status.Title {
-				cmd := make([]byte, 0, 32)
-				switch state.Status.ControllingFaction {
-				case "0":
-					if factionChange {
-						cmd = append(cmd, 'N')
-					} else {
-						cmd = append(cmd, 'n')
-					}
-				case "1":
-					if factionChange {
-						cmd = append(cmd, 'E')
-					} else {
-						cmd = append(cmd, 'e')
-					}
-				case "2":
-					if factionChange {
-						cmd = append(cmd, 'R')
-					} else {
-						cmd = append(cmd, 'r')
-					}
+			cmd := make([]byte, 0, 32)
+			switch state.Status.ControllingFaction {
+			case "0":
+				if factionChange {
+					cmd = append(cmd, 'N')
+				} else {
+					cmd = append(cmd, 'n')
+				}
+			case "1":
+				if factionChange {
+					cmd = append(cmd, 'E')
+				} else {
+					cmd = append(cmd, 'e')
+				}
+			case "2":
+				if factionChange {
+					cmd = append(cmd, 'R')
+				} else {
+					cmd = append(cmd, 'r')
 				}
 
 				// Now dump out resonator levels, one character for each, and record the health values
