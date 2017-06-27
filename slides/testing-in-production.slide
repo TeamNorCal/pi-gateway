@@ -3,7 +3,27 @@ Testing in Production
 Karl Mutch
 karlmutch@gmail.com
 
+* Sorta like this
+
+.image testing-in-production/Queen.png
+
+* The project
+
+- Integrate something, anything into a location based game
+
+- Build and Integration over a three day weekend, actually only 1 day
+
+* Our office
+
+.image testing-in-production/office.png 550 _
+
 * Making It
+
+- Maker movement not to be confused with Burning Man
+
+- It is also not the radio shack hobbiest electronics transported to today
+
+- Maker movement is becoming a social, team oriented activity
 
 - Sashas Cave Mapper [[http://makerfaire.com/maker/entry/50595/][link]]
 
@@ -21,7 +41,31 @@ How does an under represented teen create patentable technology
 
 Arduino IDE      Quick Demo
 
-* Gaming it
+* Extensible Gaming
+
+Ingress started with 2 tools, phone based and desktop based
+
+Player created tools have proliferated, some very rich
+
+Social games motivate innovation
+
+* Scanner Interface
+
+.image testing-in-production/scanner.jpg 500 _
+
+* Web Interface
+
+.image testing-in-production/intel_screen.png 500 _
+
+* Cross Team collaboration
+
+.image testing-in-production/ing-1.png 500 _
+
+* Extensibility
+
+.image testing-in-production/wgratio.png 500 _
+
+* Ingress
 
 1 Billion players use Niantic location based gaming
 
@@ -30,14 +74,6 @@ Deployed using Google Cloud Compute
 Staff of 120
 
 Driven by advertising and data collection
-
-* Extensible Gaming
-
-Ingress started with 2 tools, phone based and desktop based
-
-Player created tools have proliferated, some very rich
-
-Social games motivate innovation
 
 * The intersection
 
@@ -54,6 +90,16 @@ Physical objects react to being attacked, captured, enhanced etc
 Teams given gateway devices containing Arduino YUNs
 
 Integration using JSON and TCP/IP
+
+* Our Build
+
+A mixture of SBC and Micro-controllers
+
+.image testing-in-production/build_detail.jpg 500 _
+
+* Integration
+
+.image testing-in-production/integration.png 500 _
 
 * The make results
 
