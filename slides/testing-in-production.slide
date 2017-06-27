@@ -1,0 +1,83 @@
+Testing in Production
+
+Karl Mutch
+karlmutch@gmail.com
+
+* Making It
+
+- Sashas Cave Mapper [[http://makerfaire.com/maker/entry/50595/][link]]
+
+- 30 Year Cave Mapping project [[http://archive.globeclaritas.com/Claritas/News/Caving.html][link]]
+
+: https://www.nzgeo.com/stories/what-lies-beneath-2/
+
+- Consumers becoming Producers
+
+* Community
+
+How does an under represented teen create patentable technology
+
+[[circuito.io][circuito.io]]      Quick demo
+
+Arduino IDE      Quick Demo
+
+* Gaming it
+
+1 Billion players use Niantic location based gaming
+
+Deployed using Google Cloud Compute
+
+Staff of 120
+
+Driven by advertising and data collection
+
+* Extensible Gaming
+
+Ingress started with 2 tools, phone based and desktop based
+
+Player created tools have proliferated, some very rich
+
+Social games motivate innovation
+
+* The intersection
+
+Magnus 13 - Maker project with 13 teams
+
+Teams typically had between 5-10 active members
+
+Teams had between 10 and 30 others and we were allocated random members at the weekend
+
+Integration between projects and the in-game state
+
+Physical objects react to being attacked, captured, enhanced etc
+
+Teams given gateway devices containing Arduino YUNs
+
+Integration using JSON and TCP/IP
+
+* The make results
+
+All teams experienced failures in feeds from Niantic and shifting specifications onsite at the event
+
+Teams with responsibilities not shared across multiple individuals generally failed
+
+Two teams disappeared from the event 12 hours after arriving as a result of internal strife
+
+Few (1) team(s) had integration to Niantic servers on the saturday evening
+
+* Lessons
+
+Priorities always dictate results, no team was able to complete more than one major activity ontime
+
+Testing events across entire team, leads to trust building enabling people to backoff when others needed to get work done
+
+Things worked when people by demonstrating competence took responsibility, competance is critical to creating trust QUICKLY
+
+Sh*t breaks, ground faults, protocols diverging from spec
+
+* Some futures for location based gaming
+
+Games that are anchored at, and distributed from physical locations such as powerpoles
+
+Games that evolve and have short lifespans
+
