@@ -14,7 +14,8 @@ import (
 var (
 	arduinos      = flag.String("arduinos", "", "A list of the preferred arduino devices to be used")
 	tecthulhus    = flag.String("tecthulhus", "http://127.0.0.1:12345", "A list of either a serial devices usb://dev/ttyAMA10, or http://IP:port numbers/ for the tecthulhu REST/JSon servers to watch")
-	homeTecthulhu = flag.String("home", "Camp Navarro", "The name of the portal which we wish to subscribe to and use to drive our arduinos")
+	concAddress   = flag.String("concentrator", "", "The ZTCP/IP address of a Niantic concetrator if available")
+	homeTecthulhu = flag.String("home", "Team NorCal", "The name of the portal which we wish to subscribe to and use to drive our arduinos")
 	logLevel      = flag.String("loglevel", "warning", "Set the desired log level")
 )
 
@@ -68,7 +69,21 @@ func main() {
 
 	portals := strings.Split(*tecthulhus, ",")
 
-	go startPortals(portals, tectC, errorC, quitC)
+	if len(*concAddress) != 0 {
+		conc := &concentrator{
+			url:     *concAddress,
+			statusC: tectC,
+			errorC:  errorC,
+		}
+		go conc.startPortals(quitC)
+	} else {
+		tec := &tecthulhu{
+			url:     portals[0],
+			statusC: tectC,
+			errorC:  errorC,
+		}
+		go tec.startPortals(quitC)
+	}
 
 	// Create a channel over which notifications will be sent for new
 	// arduino devices that are detected, the gateway listens
