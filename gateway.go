@@ -68,6 +68,7 @@ func startGateway(homePortal string, tectC chan *portalStatus, ambientC chan<- s
 
 			if homePortal != state.Status.Title {
 				logW.Warn("home portal '%s' did not match the data from Niantic '%s'", homePortal, state.Status.Title)
+				continue
 			}
 
 			// If there is not history add the fresh state as the previous state

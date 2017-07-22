@@ -177,7 +177,7 @@ func (tec *tecthulhu) getStatus() {
 //
 func (tec *tecthulhu) startPortals(quitC chan bool) (err error) {
 
-	poll := time.NewTicker(time.Second)
+	poll := time.NewTicker(2 * time.Second)
 	defer poll.Stop()
 
 	for {
