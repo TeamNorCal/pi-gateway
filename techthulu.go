@@ -33,7 +33,7 @@ type tStatus struct {
 }
 
 type tPortalStatus struct {
-	State status `json:"status"`
+	State tStatus `json:"status"`
 }
 
 type tecthulhu struct {
@@ -42,20 +42,20 @@ type tecthulhu struct {
 	errorC  chan error
 }
 
-func (tec *tPortalStatus) Status() (status *portalStatus) {
-	status = &portalStatus{
+func (tec *tPortalStatus) Status() (state *portalStatus) {
+	state = &portalStatus{
 		Status: status{
-			Title:              tec.Title,
-			Owner:              tec.Owner,
-			Level:              tec.Level,
-			Health:             tec.Health,
-			ControllingFaction: tec.ControllingFaction,
+			Title:              tec.State.Title,
+			Owner:              tec.State.Owner,
+			Level:              float32(tec.State.Level),
+			Health:             float32(tec.State.Health),
+			ControllingFaction: tec.State.ControllingFaction,
 			Mods:               []mod{},
 			Resonators:         []resonator{},
 		},
 	}
-	for _, res := range tec.Resonators {
-		status.Resonators = append(status.Resonators,
+	for _, res := range tec.State.Resonators {
+		state.Status.Resonators = append(state.Status.Resonators,
 			resonator{
 				Position: res.Position,
 				Level:    res.Level,
@@ -63,8 +63,8 @@ func (tec *tPortalStatus) Status() (status *portalStatus) {
 				Owner:    res.Owner,
 			})
 	}
-	for i, modStr := range tec.Mods {
-		newMod := mod{Slot: i}
+	for i, modStr := range tec.State.Mods {
+		newMod := mod{Slot: float32(i)}
 		modParts := strings.Split(modStr, "-")
 		if len(modParts) == 2 {
 			switch modParts[1] {
@@ -78,24 +78,25 @@ func (tec *tPortalStatus) Status() (status *portalStatus) {
 		}
 		switch modParts[0] {
 		case "FA":
-			newMode.Type = "Force Amplifier"
+			newMod.Type = "Force Amplifier"
 		case "HS":
-			newMode.Type = "Heat Sink"
-		case "HS":
-			newMode.Type = "Link Amplifier"
+			newMod.Type = "Heat Sink"
+		case "LA":
+			newMod.Type = "Link Amplifier"
 		case "SBUL":
-			newMode.Type = "SoftBank UltraLink"
+			newMod.Type = "SoftBank UltraLink"
 		case "MH":
-			newMode.Type = "Multi-hack"
+			newMod.Type = "Multi-hack"
 		case "PS":
-			newMode.Type = "Portal Shield"
+			newMod.Type = "Portal Shield"
 		case "AXA":
-			newMode.Type = "AXA Shield"
+			newMod.Type = "AXA Shield"
 		case "T":
-			newMode.Type = "Turret"
+			newMod.Type = "Turret"
 		}
-		status.Mods = append(status.Mods, newMod)
+		state.Status.Mods = append(state.Status.Mods, newMod)
 	}
+	return state
 }
 
 // checkPortal can be used to extract status information from the portal
@@ -129,7 +130,11 @@ func (tec *tecthulhu) checkPortal() (status *portalStatus, err error) {
 		return nil, fmt.Errorf("Unknown scheme %s for the tecthulhu device URI", url.Scheme)
 	}
 
-	tecStatus := &tStatus{}
+	// Parse into the techthulu specific format and then convert to
+	// the canonical format used by the concentrator which we assume
+	// is a reference format for portal data and meta data
+	//
+	tecStatus := &tPortalStatus{}
 
 	err = json.Unmarshal(body, &tecStatus)
 	if err != nil {
@@ -150,7 +155,7 @@ func (tec *tecthulhu) getStatus() {
 		err = fmt.Errorf("portal status for %s could not be retrieved due to %s", tec.url, err.Error())
 		go func() {
 			select {
-			case errorC <- err:
+			case tec.errorC <- err:
 			case <-time.After(500 * time.Millisecond):
 				logW.Warn(fmt.Sprintf("could not send, error for ignored portal status update %s", err.Error()))
 			}
@@ -163,7 +168,7 @@ func (tec *tecthulhu) getStatus() {
 	case <-time.After(750 * time.Millisecond):
 		go func() {
 			select {
-			case errorC <- fmt.Errorf("portal status for %s had to be skipped", tec.url):
+			case tec.errorC <- fmt.Errorf("portal status for %s had to be skipped", tec.url):
 			case <-time.After(2 * time.Second):
 				logW.Warn("could not send error for ignored portal status update")
 			}
