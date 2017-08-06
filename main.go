@@ -14,7 +14,7 @@ import (
 var (
 	arduinos      = flag.String("arduinos", "", "A list of the preferred arduino devices to be used")
 	tecthulhus    = flag.String("tecthulhus", "http://127.0.0.1:12345", "A list of either a serial devices usb://dev/ttyAMA10, or http://IP:port numbers/ for the tecthulhu REST/JSon servers to watch")
-	concAddress   = flag.String("concentrator", "", "The ZTCP/IP address of a Niantic concetrator if available")
+	concAddress   = flag.String("concentrator", "", "The TCP/IP address of a Niantic concetrator if available")
 	homeTecthulhu = flag.String("home", "Team NorCal", "The name of the portal which we wish to subscribe to and use to drive our arduinos")
 	logLevel      = flag.String("loglevel", "warning", "Set the desired log level")
 )
@@ -34,6 +34,7 @@ func main() {
 	// Wait until intialization is over before applying the log level
 	logW.SetLevel(log.LevelInfo)
 
+	// Retrieve the log level from the command line and translate it into the internal format
 	switch strings.ToLower(*logLevel) {
 	case "trace":
 		logW.SetLevel(log.LevelTrace)
