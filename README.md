@@ -100,6 +100,7 @@ onsite at Camp Navarro.  When using the Pi 3 builds can be performed by doing a 
 repo then doing the following
 
 <pre>
+sudo apt-get install -y portaudio19-dev libasound2-dev libvorbis-dev alsa-utils alsa-tools alsa-oss alsaplayer mpg321 alsaplayer-alsa alsa-base
 cd ~
 sudo apt-get install -y wget
 wget --quiet -O go.tgz https://storage.googleapis.com/golang/go1.8.3.linux-armv6l.tar.gz
