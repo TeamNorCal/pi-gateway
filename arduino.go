@@ -232,9 +232,8 @@ func (dev *arduino) ping() (line string, err error) {
 		logW.Warn(fmt.Sprintf("%d bytes written out of %d", n, 2))
 	}
 
-	buf := make([]byte, 256)
 	reader := bufio.NewReader(dev.port)
-	buf, err = reader.ReadBytes('\x0a')
+	buf, err := reader.ReadBytes('\x0a')
 
 	return strings.TrimSpace(string(buf)), nil
 }

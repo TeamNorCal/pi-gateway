@@ -64,7 +64,7 @@ func (conc *concentrator) checkPortal() (status *portalStatus, err error) {
 
 	switch url.Scheme {
 	case "http":
-		resp, err := http.Get(url.String())
+		resp, err := http.Get(url.String() + "/module/status/json")
 		if err != nil {
 			return nil, err
 		}
@@ -84,6 +84,7 @@ func (conc *concentrator) checkPortal() (status *portalStatus, err error) {
 
 	err = json.Unmarshal(body, &status)
 	if err != nil {
+		logW.Debug(string(body))
 		logW.Debug(fmt.Sprintf("bad data %s", err))
 		return nil, err
 	}
