@@ -1,5 +1,5 @@
 # pi-gateway
-A Techthulu JSon to GPIO, I2C and Serial gateway
+A Tecthulhu JSon to GPIO, I2C and Serial gateway
 
 This repository contains the implementation of a gateway server design to run on the Debian based Raspberry Pi 3.
 
@@ -9,7 +9,7 @@ Reawakens project hosted by Niantic.
 ## Requirements
 
 * A photograph and text describing what is believed to be the source of JSon data feed, https://plus.google.com/u/1/+HRichardLoeb/posts/4jzaJ8J9W7c
-* The presence of aan RFID capability from the above the purpose and capability of which is unknown, possibly to prevent theft or tampering of the Techthulu device
+* The presence of aan RFID capability from the above the purpose and capability of which is unknown, possibly to prevent theft or tampering of the Tecthulhu device
 
 The gateway is intended to act as a client to a JSon data feed using either stock TCP/IP server 
 ports, or using a Serial port.  In the case of the TCP/IP ports it is assumed that an HTTP 1.1 client 
@@ -20,7 +20,7 @@ this will be modified to meet the changing requirements.
 The gateway is also intended to respond to the JSon messages by triggering GPIO I2C pins, or 
 sending serial data to a serial device.
 
-Audio playback will also be supported triggered using JSon from the techthulu module.
+Audio playback will also be supported triggered using JSon from the tecthulhu module.
 
 ## Integration to Audrino software projects
 
@@ -131,7 +131,7 @@ processors.  This is done using Docker.
 ## Headless Installation
 
 The pi-gateway can be installed using systemd.  The pi-gateway.service file should be
-modified to ensure that the appropriate techthulu server referenced, and then copied 
+modified to ensure that the appropriate tecthulhu server referenced, and then copied 
 into the /lib/systemd/system/ directory.
 
 These instructions assume that the pi-gateway has been git cloned into your
@@ -215,7 +215,7 @@ test data generator as follows:
 bin/HttpRoller -listen=127.0.0.1:12345 -path="./simulator/scenarios/XM_drain_all"
 
 A programatic means of generating test JSON files dose exist to simplify complex ingress portal
-state changes.  The github.com/karlmutch/techthulu-generator tool is intended as an adhoc 
+state changes.  The github.com/karlmutch/tecthulhu-generator tool is intended as an adhoc 
 tool written in Go that can be modified to create large numbers of json files for test 
 cases across time.
 

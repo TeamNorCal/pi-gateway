@@ -63,6 +63,15 @@ func (tec *tPortalStatus) Status() (state *portalStatus) {
 				Owner:    res.Owner,
 			})
 	}
+	switch tec.State.ControllingFaction {
+	case "1":
+		state.Status.ControllingFaction = "Enlightened"
+	case "2":
+		state.Status.ControllingFaction = "Resistance"
+	default:
+		state.Status.ControllingFaction = "Neutral"
+
+	}
 	for i, modStr := range tec.State.Mods {
 		newMod := mod{Slot: float32(i)}
 		modParts := strings.Split(modStr, "-")
@@ -111,8 +120,7 @@ func (tec *tecthulhu) checkPortal() (status *portalStatus, err error) {
 
 	switch url.Scheme {
 	case "http":
-		url := "/module/status/json"
-		resp, err := http.Get(tec.url + url)
+		resp, err := http.Get(tec.url)
 		if err != nil {
 			return nil, err
 		}
@@ -130,7 +138,7 @@ func (tec *tecthulhu) checkPortal() (status *portalStatus, err error) {
 		return nil, fmt.Errorf("Unknown scheme %s for the tecthulhu device URI", url.Scheme)
 	}
 
-	// Parse into the techthulu specific format and then convert to
+	// Parse into the tecthulhu specific format and then convert to
 	// the canonical format used by the concentrator which we assume
 	// is a reference format for portal data and meta data
 	//

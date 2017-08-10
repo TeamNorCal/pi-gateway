@@ -13,7 +13,7 @@ import (
 
 var (
 	arduinos      = flag.String("arduinos", "", "A list of the preferred arduino devices to be used")
-	tecthulhus    = flag.String("tecthulus", "http://127.0.0.1:12345", "A list of either a serial devices usb://dev/ttyAMA10, or http://IP:port numbers/ for the tecthulhu REST/JSon servers to watch")
+	tecthulhus    = flag.String("tecthulhus", "http://127.0.0.1:12345", "A list of either a serial devices usb://dev/ttyAMA10, or http://IP:port numbers/ for the tecthulhu REST/JSon servers to watch")
 	concAddress   = flag.String("concentrator", "", "The TCP/IP address of a Niantic concetrator if available")
 	homeTecthulhu = flag.String("home", "Team NorCal", "The name of the portal which we wish to subscribe to and use to drive our arduinos")
 	logLevel      = flag.String("loglevel", "warning", "Set the desired log level")
@@ -27,7 +27,7 @@ func main() {
 	flag.Parse()
 
 	if len(*tecthulhus) == 0 && len(*concAddress) == 0 {
-		logW.Fatal("No tecthulu/concentrator TCP/IP addresses or Serial USB modules were specified")
+		logW.Fatal("No tecthulhu/concentrator TCP/IP addresses or Serial USB modules were specified")
 		os.Exit(-1)
 	}
 
@@ -63,7 +63,7 @@ func main() {
 
 	initAudio(ambientC, sfxC, quitC)
 
-	// portals encapsulate a JSon data feed from ingress techthulu nodes
+	// portals encapsulate a JSon data feed from ingress tecthulhu nodes
 	//
 	tectC := make(chan *portalStatus, 3)
 	errorC := make(chan error, 1)
