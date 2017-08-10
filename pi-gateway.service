@@ -7,7 +7,7 @@ Type=idle
 Environment=LOGXI=*
 Environment=LOGXI_FORMAT=happy,maxcol=4096
 ExecStart=
-ExecStart=/home/pi/pi-gateway/bin/pi-gateway -loglevel=info -tecthulhus http://192.168.66.13/portals/Tecthulhu07.json
+ExecStart=/home/pi/pi-gateway/bin/pi-gateway -loglevel=info -tecthulhus http://127.0.0.1:12345/module/status/json "-home=Camp Navarro" -audioDir=/home/pi/pi-gateway/assets/sound
 
 [Install]
 WantedBy=multi-user.target

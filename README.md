@@ -255,7 +255,6 @@ Googles Low Level Library - https://periph.io/
 
 In order to run the audio portion of the project the following libraries need to be installed.
 <pre>
-sudo apt-get remove libasound2 openjdk-7-jdk openjdk-8-jre openjdk-8-jdk
 sudo apt-get install portaudio19-dev libasound2-dev libvorbis-dev alsa-utils alsa-tools alsa-oss alsaplayer mpg321 alsaplayer-alsa alsa-base
 </pre>
 You will also need to enable the dmix audio output otherwise the software will fail.  Instructions for enabling the default audio mixer can be found at, http://alsa.opensrc.org/Dmix#5._The_simple_approach:.
@@ -265,7 +264,9 @@ line added to your /boot/config.txt file:
 
 dtoverlay=i2s-mmap
 
-The following page has information about setting the volume, https://bbs.archlinux.org/viewtopic.php?id=134532.  Use the PCM devicei as the name not Master.
+The following page has information about setting the volume, https://bbs.archlinux.org/viewtopic.php?id=134532.  Use the PCM device as the name not Master.
+
+The best page I have found for the HiFiBerry is at https://www.hifiberry.com/build/documentation/configuring-linux-3-18-x/
 
 The PCM mix device can vary between installs, one page that has an approach for configuring the sound can be found at, https://www.raspberrypi.org/forums/viewtopic.php?p=1147994.
 
