@@ -102,11 +102,11 @@ repo then doing the following
 <pre>
 cd ~
 sudo apt-get install -y wget
-wget --quiet -O go.tgz https://storage.googleapis.com/golang/go1.8.1.linux-armv6l.tar.gz
+wget --quiet -O go.tgz https://storage.googleapis.com/golang/go1.8.3.linux-armv6l.tar.gz
 tar xzfo go.tgz
 export PATH=$PATH:/home/$USER/go/bin
 export GOROOT=/home/$USER/go
-
+git clone https://github.com/TeamNorCal/pi-gateway.git
 cd pi-gateway
 export GOPATH=`pwd`
 export GOBIN=`pwd`/bin
@@ -253,10 +253,10 @@ Googles Low Level Library - https://periph.io/
 ##Audio support based upon triggered events
 
 In order to run the audio portion of the project the following libraries need to be installed.
-
-sudo apt-get remove libasound2 openjdk-7-jdk
-apt-get install portaudio19-dev libasound2-dev libvorbis-dev alsa-utils alsa-tools alsa-oss alsaplayer mpg321 alsaplayer-alsa alsa-base
-
+<pre>
+sudo apt-get remove libasound2 openjdk-7-jdk openjdk-8-jre openjdk-8-jdk
+sudo apt-get install portaudio19-dev libasound2-dev libvorbis-dev alsa-utils alsa-tools alsa-oss alsaplayer mpg321 alsaplayer-alsa alsa-base
+</pre>
 You will also need to enable the dmix audio output otherwise the software will fail.  Instructions for enabling the default audio mixer can be found at, http://alsa.opensrc.org/Dmix#5._The_simple_approach:.
 
 The raspberry pi kernel also needs its support for mmap enabled.  You should have the following
