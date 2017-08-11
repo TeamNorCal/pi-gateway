@@ -63,9 +63,10 @@ func main() {
 
 	initAudio(ambientC, sfxC, quitC)
 
-	// portals encapsulate a JSon data feed from ingress tecthulhu nodes
+	// portals encapsulate a JSon data feed from ingress nodes, that 
+	// contains up to approximately 4 seconds of status updates
 	//
-	tectC := make(chan *portalStatus, 3)
+	statusC := make(chan *portalStatus, 1)
 	errorC := make(chan error, 1)
 
 	portals := strings.Split(*tecthulhus, ",")
@@ -73,14 +74,14 @@ func main() {
 	if len(*concAddress) != 0 {
 		conc := &concentrator{
 			url:     *concAddress,
-			statusC: tectC,
+			statusC: statusC,
 			errorC:  errorC,
 		}
 		go conc.startPortals(quitC)
 	} else {
 		tec := &tecthulhu{
 			url:     portals[0],
-			statusC: tectC,
+			statusC: statusC,
 			errorC:  errorC,
 		}
 		go tec.startPortals(quitC)
@@ -95,7 +96,7 @@ func main() {
 	// The gateway bridges the status reports from portals down to arduinos
 	// using the serial protocols defined by the arduino team
 	//
-	go startGateway(*homeTecthulhu, tectC, ambientC, sfxC, quitC)
+	go startGateway(*homeTecthulhu, statusC, ambientC, sfxC, quitC)
 
 	// If someone presses ctrl C then close our quitc channel to shutdown the system
 	// in an orderly way especially when dealing with device handles for the serial IO

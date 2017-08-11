@@ -164,7 +164,7 @@ func startDevice(portalName string, devName string) (device *arduino, err error)
 
 	device = &arduino{}
 
-	device.port, err = serial.OpenPort(&serial.Config{Name: devName, Baud: 9600, ReadTimeout: time.Duration(time.Second * 5)})
+	device.port, err = serial.OpenPort(&serial.Config{Name: devName, Baud: 9600, ReadTimeout: time.Duration(time.Second * 2)})
 
 	if err != nil {
 		logW.Error(fmt.Sprintf("unable to open arduino at %s due to %s", devName, err.Error()), "error", err)
@@ -239,6 +239,8 @@ func (dev *arduino) ping() (line string, err error) {
 }
 
 func (dev *arduino) sendCmd(cmd []byte) (err error) {
+
+	dev.port.Flush()
 
 	// TODO Add an incremental write loop for serial devices
 	n, err := dev.port.Write(cmd)

@@ -49,13 +49,21 @@ func startGateway(homePortal string, tectC chan *portalStatus, ambientC chan<- s
 	refresh := time.NewTicker(2 * time.Second)
 	defer refresh.Stop()
 
+	go func () {
+		for {
+			select {
+			case state := <-tectC:
+				status.Lock()
+				status.status = state
+				status.Unlock()
+			case <-quitC:
+				return
+			}
+		}
+	}()
+ 
 	for {
 		select {
-		case state := <-tectC:
-			status.Lock()
-			status.status = state
-			status.Unlock()
-
 		case <-refresh.C:
 			status.Lock()
 			state := status.status
@@ -130,18 +138,22 @@ func startGateway(homePortal string, tectC chan *portalStatus, ambientC chan<- s
 					logW.Warn(fmt.Sprintf("unknown faction '%s'", state.Status.ControllingFaction))
 				}
 				forceAmbient = false
-				select {
-				case ambientC <- ambient:
-				case <-time.After(3 * time.Second):
-				}
+				go func() {
+					select {
+					case ambientC <- ambient:
+					case <-time.After(time.Second):
+					}
+				}()
 			}
 
 			// Check for sound effects that need to be played
 			if len(sfxs) != 0 {
-				select {
-				case sfxC <- sfxs:
-				case <-time.After(3 * time.Second):
-				}
+				go func() {
+					select {
+					case sfxC <- sfxs:
+					case <-time.After(time.Second):
+					}
+				}()
 			}
 			// Process the state updates into arduino CMDs and then send these to
 			// the arduinos that are listening and our associated with the home portal
